@@ -4,9 +4,10 @@ from sqlalchemy.exc import IntegrityError
 import requests
 import os
 
-from models import db, connect_db, User, CoinbaseExchangeAuth
-from forms import UserAddForm, LoginForm
+from models import db, connect_db, User, CoinbaseExchangeAuth, Account
+from forms import UserAddForm, LoginForm, DepositForm
 
+from helpers.helpers import update_user_accounts
 
 app = Flask(__name__, instance_path='/instance')
 
@@ -18,9 +19,9 @@ db.create_all()
 
 API_URL = "https://api-public.sandbox.pro.coinbase.com/"
 
-API_KEY = os.environ.get("API_KEY")
-API_SECRET = os.environ.get("API_SECRET")
-API_PASSPHRASE = os.environ.get("API_PASSPHRASE")
+API_KEY = app.config["API_KEY"]
+API_SECRET = app.config["API_SECRET"]
+API_PASSPHRASE = app.config["API_PASSPHRASE"]
 
 CURR_USER_KEY = "curr_user"
 
@@ -120,8 +121,6 @@ def logout():
 
 ##############################################################################
 # User pages
-
-
 @app.route('/users/<int:user_id>/dashboard')
 def dashboard(user_id):
     """Show user's dashboard."""
@@ -132,11 +131,43 @@ def dashboard(user_id):
                                 API_SECRET, API_PASSPHRASE)
     response = requests.get(API_URL + 'accounts', auth=auth)
     accounts = response.json()
+
+    # update the user's accounts in the db
+    update_user_accounts(accounts)
+
     return render_template("users/dashboard.html", accounts=accounts)
+
+
+@app.route('/users/<int:user_id>/deposit')
+def deposit(user_id):
+    """Deposit funds into Coinbase Pro."""
+    # if not g.user:
+    #     flash("Access unauthorized.", "danger")
+    #     return redirect("/")
+    form = DepositForm()
+    auth = CoinbaseExchangeAuth(API_KEY,
+                                API_SECRET, API_PASSPHRASE)
+    # response = requests.get(API_URL + 'accounts', auth=auth)
+    # accounts = response.json()
+
+    return render_template("users/deposit.html", form=form)
+
+
+##############################################################################
+# Currency pages
+
+@app.route('/currencies/<string:currency>')
+def currency(currency):
+    """Show currency info."""
+
+    response = requests.get(f"{API_URL}products/{currency}-btc/ticker")
+    data = response.json()
+    return render_template(f"currencies/currency.html", currency=currency, data=data)
 
 
 ##############################################################################
 # Homepage and error pages
+
 
 @app.route('/')
 def homepage():

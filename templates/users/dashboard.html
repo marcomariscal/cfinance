@@ -1,6 +1,6 @@
 {% extends 'base.html' %} {% block content %}
 <h1>User Dashboard</h1>
-<table class="table table-hover mt-3">
+<table class="table table-hover mt-3" id="portfolio-table">
   <thead class="thead-light">
     <tr>
       <th scope="col">Currency</th>
@@ -11,12 +11,20 @@
   </thead>
   <tbody>
     {% for account in accounts %}
-    <tr>
-      <td>{{account.currency}}</td>
-      <td>{{account.balance}}</td>
-      <td>{{account.available}}</td>
-      <td>{{account.hold}}</td>
+    <tr class="portfolio-table-row" id="{{account.currency}}">
+      <td>
+        <img
+          src="/static/cryptocurrency-icons-master/svg/color/{{account.currency | lower}}.svg"
+          alt="{{account.currency}}"
+          class="currency-icon mr-2"
+        />
+        <span>{{account.currency}}</span>
+      </td>
+      <td>{{account.balance | float | round(2)}}</td>
+      <td>{{account.available | float | round(2)}}</td>
+      <td>{{account.hold | float | round(2) }}</td>
     </tr>
+
     {% endfor %}
   </tbody>
 </table>

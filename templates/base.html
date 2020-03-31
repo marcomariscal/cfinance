@@ -24,13 +24,15 @@
             <span>CFinance</span>
           </a>
         </div>
+
         <ul class="nav navbar-nav navbar-right">
-          {% if not g.user %}
           <li><a href="/signup">Sign up</a></li>
           <li><a href="/login">Log in</a></li>
-          {% else %}
+          <li><a href="/allocations">Allocations</a></li>
+          <li><a href="/activity">Activity</a></li>
+          <li><a href="/trade">Trade</a></li>
+          <li><a href="/users/1/deposit">Deposit</a></li>
           <li><a href="/logout">Log out</a></li>
-          {% endif %}
         </ul>
       </div>
     </nav>
@@ -54,5 +56,8 @@
       integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
       crossorigin="anonymous"
     ></script>
+    <script src="https://unpkg.com/axios/dist/axios.js"></script>
+    <script src="/static/helpers.js"></script>
+    <script src="/static/app.js"></script>
   </body>
 </html>

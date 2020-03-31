@@ -87,6 +87,33 @@ class User(db.Model):
         return False
 
 
+class Account(db.Model):
+    """Accounts for the user in coinbase, related to how much balance/funding they have for each currency."""
+
+    __tablename__ = "accounts"
+
+    id = db.Column(db.String,
+                   primary_key=True)
+
+    currency = db.Column(db.String,
+                         nullable=False)
+
+    balance = db.Column(db.Float,
+                        nullable=False)
+
+    available = db.Column(db.Float, nullable=False)
+
+    hold = db.Column(db.Float, nullable=False)
+
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey('users.id'),
+        nullable=False,
+    )
+
+    user = db.relationship('User')
+
+
 # Create custom authentication for Exchange
 class CoinbaseExchangeAuth(AuthBase):
     def __init__(self, api_key, secret_key, passphrase):
