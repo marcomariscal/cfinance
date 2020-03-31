@@ -1,8 +1,12 @@
 from flask import Flask, render_template, request, flash, redirect, session, g
 from flask_debugtoolbar import DebugToolbarExtension
-from models import db, connect_db, User
-from forms import UserAddForm, LoginForm
 from sqlalchemy.exc import IntegrityError
+import requests
+import os
+
+from models import db, connect_db, User, CoinbaseExchangeAuth
+from forms import UserAddForm, LoginForm
+
 
 app = Flask(__name__, instance_path='/instance')
 
@@ -12,6 +16,11 @@ debug = DebugToolbarExtension(app)
 connect_db(app)
 db.create_all()
 
+API_URL = "https://api-public.sandbox.pro.coinbase.com/"
+
+API_KEY = os.environ.get("API_KEY")
+API_SECRET = os.environ.get("API_SECRET")
+API_PASSPHRASE = os.environ.get("API_PASSPHRASE")
 
 CURR_USER_KEY = "curr_user"
 
@@ -47,11 +56,11 @@ def do_logout():
 def signup():
     """Handle user signup.
 
-    Create new user and add to DB. Redirect to home page.
+    Create new user and add to DB. Redirect to user's dashboard.
 
     If form not valid, present form.
 
-    If the there already is a user with that username: flash message
+    If the user can't be authed within Coinbase, flash message
     and re-present form.
     """
     if CURR_USER_KEY in session:
@@ -62,18 +71,18 @@ def signup():
         try:
             user = User.signup(
                 api_key=form.api_key.data,
-                username=form.username.data,
-                password=form.password.data,
+                api_secret=form.api_secret.data,
+                api_passphrase=form.api_passphrase.data,
             )
             db.session.commit()
 
         except IntegrityError as e:
-            flash("Username already taken", 'danger')
+            flash("Unable to authorize access to Coinbase Pro", 'danger')
             return render_template('users/signup.html', form=form)
 
         do_login(user)
 
-        return redirect("/")
+        return redirect(f"/users/{user.id}/dashboard")
 
     else:
         return render_template('users/signup.html', form=form)
@@ -86,13 +95,13 @@ def login():
     form = LoginForm()
 
     if form.validate_on_submit():
-        user = User.authenticate(form.username.data,
-                                 form.password.data)
+        user = User.authenticate(api_key=form.api_key.data, api_secret=form.api_secret.data,
+                                 api_passphrase=form.api_passphrase.data)
 
         if user:
             do_login(user)
-            flash(f"Hello, {user.username}!", "success")
-            return redirect("/")
+            flash(f"Welcome Back!", "success")
+            return redirect(f"/users/{user.id}/dashboard")
 
         flash("Invalid credentials.", 'danger')
 
@@ -107,6 +116,23 @@ def logout():
 
     flash("You have successfully logged out.", 'success')
     return redirect("/login")
+
+
+##############################################################################
+# User pages
+
+
+@app.route('/users/<int:user_id>/dashboard')
+def dashboard(user_id):
+    """Show user's dashboard."""
+    # if not g.user:
+    #     flash("Access unauthorized.", "danger")
+    #     return redirect("/")
+    auth = CoinbaseExchangeAuth(API_KEY,
+                                API_SECRET, API_PASSPHRASE)
+    response = requests.get(API_URL + 'accounts', auth=auth)
+    accounts = response.json()
+    return render_template("users/dashboard.html", accounts=accounts)
 
 
 ##############################################################################
@@ -128,21 +154,3 @@ def page_not_found(e):
     """404 NOT FOUND page."""
 
     return render_template('404.html'), 404
-
-
-##############################################################################
-# Turn off all caching in Flask
-#   (useful for dev; in production, this kind of stuff is typically
-#   handled elsewhere)
-#
-# https://stackoverflow.com/questions/34066804/disabling-caching-in-flask
-
-@app.after_request
-def add_header(req):
-    """Add non-caching headers on every request."""
-
-    req.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-    req.headers["Pragma"] = "no-cache"
-    req.headers["Expires"] = "0"
-    req.headers['Cache-Control'] = 'public, max-age=0'
-    return req

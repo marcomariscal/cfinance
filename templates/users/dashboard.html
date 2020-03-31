@@ -1,0 +1,23 @@
+{% extends 'base.html' %} {% block content %}
+<h1>User Dashboard</h1>
+<table class="table table-hover mt-3">
+  <thead class="thead-light">
+    <tr>
+      <th scope="col">Currency</th>
+      <th scope="col">Balance</th>
+      <th scope="col">Available</th>
+      <th scope="col">Hold</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for account in accounts %}
+    <tr>
+      <td>{{account.currency}}</td>
+      <td>{{account.balance}}</td>
+      <td>{{account.available}}</td>
+      <td>{{account.hold}}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,129 @@
+/* ====================== General */
+
+body {
+  background-color: #ffffff;
+}
+
+body.error-404 {
+  background-color: #ffffff;
+}
+
+.form-control {
+  margin-bottom: 20px;
+}
+
+.btn {
+  border-radius: 2px;
+  background-color: rgb(243, 243, 254);
+  border-color: #1c115f;
+  color: #1c115f;
+}
+
+.btn:hover {
+  cursor: pointer;
+  background-color: #a1e9b9;
+  color: #1c115f;
+}
+
+/* ======================= Nav */
+
+.navbar {
+  background-color: #1c115f;
+  height: 50px;
+  margin-bottom: 1rem;
+  position: relative;
+  z-index: 9999;
+}
+
+.navbar a {
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.navbar a:hover {
+  color: #a1e9b9;
+}
+
+.navbar-brand {
+  display: flex;
+  align-items: center;
+}
+
+.navbar-brand > img {
+  display: inline-block;
+  margin-bottom: 2px;
+  margin-right: 5px;
+  width: 20px;
+  border-radius: 2px;
+}
+
+.nav > li > a > img {
+  width: 32px;
+  border-radius: 32px;
+}
+
+ul.nav.navbar-nav {
+  align-items: center;
+}
+
+ul.nav.navbar-nav li {
+  margin: 0 0.5rem;
+  display: flex;
+}
+
+/* on "onboarding" pages (signup & login), the navbar is
+   different: no search box, the logo is centered, and it has
+   a background color.
+ */
+
+.onboarding > .navbar {
+  background-image: url("/static/images/nav-bg.png");
+  background-size: 100% 100%;
+}
+
+.onboarding .navbar-header {
+  margin: 0 auto;
+}
+
+.onboarding .navbar-brand {
+  margin: 0;
+}
+
+.onboarding .navbar-brand span {
+  display: none;
+}
+
+.onboarding .nav.navbar-nav.navbar-right {
+  position: absolute;
+  right: 16px;
+}
+
+.onboarding > .navbar a {
+  color: #fff;
+}
+
+.onboarding > .navbar form.navbar-form {
+  display: none;
+}
+
+.onboarding {
+  background-color: #fff;
+}
+
+@media (max-width: 468px) {
+  nav form.navbar-form {
+    display: none;
+  }
+}
+
+nav + .container {
+  margin-bottom: 1rem;
+}
+
+/* ========================== Signup/Login */
+
+#user_form input.form-control {
+  font-size: 16px;
+  padding: 10px;
+}

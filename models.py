@@ -1,11 +1,15 @@
 from flask_bcrypt import Bcrypt
 from flask_sqlalchemy import SQLAlchemy
+import json
+import hmac
+import hashlib
+import time
+import requests
+import base64
+from requests.auth import AuthBase
 
 bcrypt = Bcrypt()
 db = SQLAlchemy()
-
-
-DEFAULT_IMG_URL = 'https://i.stack.imgur.com/34AD2.jpg'
 
 
 class User(db.Model):
@@ -16,55 +20,96 @@ class User(db.Model):
     id = db.Column(db.Integer,
                    primary_key=True)
 
-    api_key = db.Column(db.Text,
+    api_key = db.Column(db.String,
                         nullable=False, unique=True)
 
-    username = db.Column(db.Text,
-                         nullable=False, unique=True)
+    api_secret = db.Column(db.String,
+                           nullable=False)
 
-    password = db.Column(db.Text, nullable=False)
+    api_passphrase = db.Column(db.String, nullable=False)
 
     def __repr__(self):
-        return f"<User #{self.id}: {self.username}>"
+        return f"<User #{self.id}: {self.api_key}>"
 
     @classmethod
-    def signup(cls, api_key, username, password):
+    def signup(cls, api_key, api_secret, api_passphrase):
         """Sign up user using coinbase pro api key, username, and password.
 
-        Hashes api_key and password, then adds user to system.
+        First must check that the credentials provided actually exist in Coinbase and are
+        authenticated with the custom Coinbase auth class.
+
+        Then we hash api_key, secret, and passphrase and add user to system.
         """
 
-        hashed_api_key = bcrypt.generate_password_hash(api_key).decode('UTF-8')
-        hashed_pwd = bcrypt.generate_password_hash(password).decode('UTF-8')
+        coinbase_auth = CoinbaseExchangeAuth(
+            api_key, api_secret, api_passphrase)
 
-        user = User(
-            api_key=hashed_api_key,
-            username=username,
-            password=hashed_pwd
-        )
+        if coinbase_auth:
 
-        db.session.add(user)
-        return user
+            hashed_secret = bcrypt.generate_password_hash(
+                api_secret).decode('UTF-8')
+            hashed_passphrase = bcrypt.generate_password_hash(
+                api_passphrase).decode('UTF-8')
+
+            user = User(
+                api_key=api_key,
+                api_secret=hashed_secret,
+                api_passphrase=hashed_passphrase
+            )
+
+            db.session.add(user)
+            return user
+
+        return False
 
     @classmethod
-    def authenticate(cls, username, password):
-        """Find user with `username` and `password`.
+    def authenticate(cls, api_key, api_secret, api_passphrase):
+        """Find user with coinbase pro credentials`.
 
         This is a class method (call it on the class, not an individual user.)
         It searches for a user whose password hash matches this password
         and, if it finds such a user, returns that user object.
 
-        If can't find matching user (or if password is wrong), returns False.
+        If can't find matching user (or if creds are wrong), returns False.
         """
 
-        user = cls.query.filter_by(username=username).first()
+        user = cls.query.filter_by(api_key=api_key).first()
 
         if user:
-            is_auth = bcrypt.check_password_hash(user.password, password)
-            if is_auth:
+            is_auth_api_secret = bcrypt.check_password_hash(
+                user.api_secret, api_secret)
+            is_auth_api_passphrase = bcrypt.check_password_hash(
+                user.api_passphrase, api_passphrase)
+
+            if is_auth_api_secret and is_auth_api_passphrase:
                 return user
 
         return False
+
+
+# Create custom authentication for Exchange
+class CoinbaseExchangeAuth(AuthBase):
+    def __init__(self, api_key, secret_key, passphrase):
+        self.api_key = api_key
+        self.secret_key = secret_key
+        self.passphrase = passphrase
+
+    def __call__(self, request):
+        timestamp = str(time.time())
+        message = timestamp + request.method + \
+            request.path_url + (request.body or '')
+        hmac_key = base64.b64decode(self.secret_key)
+        signature = hmac.new(hmac_key, message.encode(), hashlib.sha256)
+        signature_b64 = base64.b64encode(signature.digest()).decode()
+
+        request.headers.update({
+            'CB-ACCESS-SIGN': signature_b64,
+            'CB-ACCESS-TIMESTAMP': timestamp,
+            'CB-ACCESS-KEY': self.api_key,
+            'CB-ACCESS-PASSPHRASE': self.passphrase,
+            'Content-Type': 'application/json'
+        })
+        return request
 
 
 def connect_db(app):
