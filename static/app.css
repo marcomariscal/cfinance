@@ -43,6 +43,7 @@ body.error-404 {
 
 .navbar a:hover {
   color: #a1e9b9;
+  text-decoration: none;
 }
 
 .navbar-brand {

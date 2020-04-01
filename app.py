@@ -4,10 +4,10 @@ from sqlalchemy.exc import IntegrityError
 import requests
 import os
 
-from models import db, connect_db, User, CoinbaseExchangeAuth, Account
-from forms import UserAddForm, LoginForm, DepositForm
+from models import db, connect_db, User, CoinbaseExchangeAuth, Account, Deposit, Currency
+from forms import UserAddForm, LoginForm, DepositForm, AllocationForm, PortfolioForm
 
-from helpers.helpers import update_user_accounts, payment_methods_to_db
+from helpers.helpers import user_accounts_to_db, payment_methods_to_db, handle_deposit
 
 app = Flask(__name__, instance_path='/instance')
 
@@ -131,32 +131,63 @@ def dashboard(user_id):
     #     flash("Access unauthorized.", "danger")
     #     return redirect("/")
 
-    response = requests.get(API_URL + 'accounts', auth=auth)
-    accounts = response.json()
-
-    # update the user's accounts in the db
-    update_user_accounts(accounts)
+    # update the user's accounts in the db and return the accounts
+    accounts = user_accounts_to_db(user_id, auth)
 
     return render_template("users/dashboard.html", accounts=accounts)
 
 
-@app.route('/users/<int:user_id>/deposit')
+@app.route('/users/<int:user_id>/deposit', methods=["GET", "POST"])
 def deposit(user_id):
     """Deposit funds into Coinbase Pro."""
     # if not g.user:
     #     flash("Access unauthorized.", "danger")
     #     return redirect("/")
     form = DepositForm()
+
+    # get payment methods from coinbase and put in db
     payment_methods = payment_methods_to_db(user_id, "USD", auth)
 
     form.payment_method.choices = [(key, val)
                                    for key, val in payment_methods.items()]
 
+    if form.validate_on_submit():
+        payment_method_id = form.payment_method.data
+        amount = form.amount.data
+        currency = "USD"
+
+        data = handle_deposit(user_id, auth, amount,
+                              currency, payment_method_id)
+
+        if data:
+            flash("Deposit initiated!", "success")
     return render_template("users/deposit.html", form=form)
 
 
+@app.route('/users/<int:user_id>/portfolio', methods=["GET", "POST"])
+def allocations(user_id):
+    """View and set allocations for a user's portfolio of currencies."""
+    # if not g.user:
+    #     flash("Access unauthorized.", "danger")
+    #     return redirect("/")
+    form = PortfolioForm()
+
+    # get all available account currencies for this user
+    user = User.query.get(user_id)
+    currencies = [account.currency for account in user.accounts]
+
+    for currency in currencies:
+        allocation_form = AllocationForm()
+        allocation_form.currency = currency
+        allocation_form.percentage = 0
+
+        form.portfolio.append_entry(allocation_form)
+
+    return render_template('/users/portfolio.html', form=form)
+
 ##############################################################################
 # Currency pages
+
 
 @app.route('/currencies/<string:currency>')
 def currency(currency):

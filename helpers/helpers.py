@@ -4,30 +4,33 @@ import requests
 API_URL = "https://api-public.sandbox.pro.coinbase.com/"
 
 
-def update_user_accounts(accounts):
-    for account in accounts:
-        id = account["id"]
-        account_in_db = Account.query.get(id)
+def user_accounts_to_db(user_id, auth):
+    response = requests.get(API_URL + 'accounts', auth=auth)
+    accounts = response.json()
 
-        if account_in_db:
-            account_in_db.currency = account["currency"]
-            account_in_db.balance = account["balance"]
-            account_in_db.available = account["available"]
-            account_in_db.hold = account["hold"]
-            db.session.add(account_in_db)
+    for acct in accounts:
+        id = acct["id"]
+        account = Account.query.get(id)
+
+        if account:
+            account.currency = acct["currency"]
+            account.balance = acct["balance"]
+            account.available = acct["available"]
+            account.hold = acct["hold"]
+            db.session.add(account)
 
         else:
-            currency = account["currency"]
-            balance = account["balance"]
-            available = account["available"]
-            hold = account["hold"]
+            currency = acct["currency"]
+            balance = acct["balance"]
+            available = acct["available"]
+            hold = acct["hold"]
 
             account = Account(id=id, currency=currency,
                               balance=balance, available=available, hold=hold, user_id=user_id)
-
             db.session.add(account)
 
     db.session.commit()
+    return accounts
 
 
 def payment_methods_to_db(user_id, currency, auth):
@@ -59,3 +62,23 @@ def payment_methods_to_db(user_id, currency, auth):
         db.session.commit()
 
     return payment_methods
+
+
+def handle_deposit(user_id, auth, amount, currency, payment_method_id):
+    """Deposit funds using user's inputted values and sending to Coinbase API. 
+    Can only deposit funds using USD payment methods for now."""
+    data = {"amount": amount, "currency": currency,
+            "payment_method_id": payment_method_id}
+
+    response = requests.get(
+        API_URL + "desposits/payment-methods", data=data, auth=auth)
+    json = response.json()
+
+    return json
+
+
+def get_currencies():
+    """Get currencies from Coinbase API."""
+    response = requests.get(API_URL + "currencies")
+    json = response.json()
+    return json

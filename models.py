@@ -28,6 +28,12 @@ class User(db.Model):
 
     api_passphrase = db.Column(db.String, nullable=False)
 
+    accounts = db.relationship('Account',
+                               backref='user')
+
+    payment_methods = db.relationship('PaymentMethod',
+                                      backref='user')
+
     def __repr__(self):
         return f"<User #{self.id}: {self.api_key}>"
 
@@ -95,8 +101,7 @@ class Account(db.Model):
     id = db.Column(db.String,
                    primary_key=True)
 
-    currency = db.Column(db.String,
-                         nullable=False)
+    currency = db.Column(db.String, nullable=False)
 
     balance = db.Column(db.Float,
                         nullable=False)
@@ -110,8 +115,6 @@ class Account(db.Model):
         db.ForeignKey('users.id'),
         nullable=False,
     )
-
-    user = db.relationship('User')
 
 
 class PaymentMethod(db.Model):
@@ -131,10 +134,91 @@ class PaymentMethod(db.Model):
         nullable=False,
     )
 
+
+class Deposit(db.Model):
+    """Deposit instance for a user."""
+
+    __tablename__ = "deposits"
+
+    id = db.Column(db.String,
+                   primary_key=True)
+
+    amount = db.Column(db.Float,
+                       nullable=False)
+
+    currency = db.Column(db.String, db.ForeignKey(
+        'currencies.name'), nullable=False)
+
+    payment_method_id = db.Column(
+        db.String,
+        db.ForeignKey('payment_methods.id'),
+        nullable=False,
+    )
+
+    payout_at = db.Column(db.DateTime, nullable=False)
+
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey('users.id'),
+        nullable=False,
+    )
+
+    user = db.relationship('User')
+    payment_method = db.relationship('PaymentMethod')
+
+
+class Currency(db.Model):
+    """Available currencies from Coinbase Pro API."""
+
+    __tablename__ = "currencies"
+
+    name = db.Column(db.String, primary_key=True,
+                     nullable=False)
+
+
+class Allocation(db.Model):
+    """Allocation percentages per currency for a user."""
+
+    __tablename__ = "allocations"
+
+    currency = db.Column(db.String, primary_key=True,
+                         nullable=False)
+
+    percentage = db.Column(db.Float,
+                           nullable=False)
+
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey('users.id'),
+        nullable=False,
+    )
+
     user = db.relationship('User')
 
 
+class Portfolio(db.Model):
+    """A portfolio of many allocations for a user."""
+
+    __tablename__ = "portfolio"
+
+    id = db.Column(db.Integer, primary_key=True,
+                   nullable=False)
+
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey('users.id'),
+        nullable=False,
+    )
+
+    user = db.relationship('User',
+                           backref='portfolio')
+
+    allocations = db.relationship('Allocation',
+                                  backref='portfolio')
+
 # Create custom authentication for Exchange
+
+
 class CoinbaseExchangeAuth(AuthBase):
     def __init__(self, api_key, secret_key, passphrase):
         self.api_key = api_key
