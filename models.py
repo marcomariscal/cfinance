@@ -114,6 +114,26 @@ class Account(db.Model):
     user = db.relationship('User')
 
 
+class PaymentMethod(db.Model):
+    """Payment methods for a user."""
+
+    __tablename__ = "payment_methods"
+
+    id = db.Column(db.String,
+                   primary_key=True)
+
+    name = db.Column(db.String,
+                     nullable=False)
+
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey('users.id'),
+        nullable=False,
+    )
+
+    user = db.relationship('User')
+
+
 # Create custom authentication for Exchange
 class CoinbaseExchangeAuth(AuthBase):
     def __init__(self, api_key, secret_key, passphrase):

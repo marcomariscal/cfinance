@@ -7,7 +7,7 @@ import os
 from models import db, connect_db, User, CoinbaseExchangeAuth, Account
 from forms import UserAddForm, LoginForm, DepositForm
 
-from helpers.helpers import update_user_accounts
+from helpers.helpers import update_user_accounts, payment_methods_to_db
 
 app = Flask(__name__, instance_path='/instance')
 
@@ -22,6 +22,8 @@ API_URL = "https://api-public.sandbox.pro.coinbase.com/"
 API_KEY = app.config["API_KEY"]
 API_SECRET = app.config["API_SECRET"]
 API_PASSPHRASE = app.config["API_PASSPHRASE"]
+
+auth = CoinbaseExchangeAuth(API_KEY, API_SECRET, API_PASSPHRASE)
 
 CURR_USER_KEY = "curr_user"
 
@@ -124,11 +126,11 @@ def logout():
 @app.route('/users/<int:user_id>/dashboard')
 def dashboard(user_id):
     """Show user's dashboard."""
+
     # if not g.user:
     #     flash("Access unauthorized.", "danger")
     #     return redirect("/")
-    auth = CoinbaseExchangeAuth(API_KEY,
-                                API_SECRET, API_PASSPHRASE)
+
     response = requests.get(API_URL + 'accounts', auth=auth)
     accounts = response.json()
 
@@ -145,10 +147,10 @@ def deposit(user_id):
     #     flash("Access unauthorized.", "danger")
     #     return redirect("/")
     form = DepositForm()
-    auth = CoinbaseExchangeAuth(API_KEY,
-                                API_SECRET, API_PASSPHRASE)
-    # response = requests.get(API_URL + 'accounts', auth=auth)
-    # accounts = response.json()
+    payment_methods = payment_methods_to_db(user_id, "USD", auth)
+
+    form.payment_method.choices = [(key, val)
+                                   for key, val in payment_methods.items()]
 
     return render_template("users/deposit.html", form=form)
 

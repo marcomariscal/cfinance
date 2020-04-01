@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SelectField
+from wtforms import StringField, PasswordField, SelectField, DecimalField
 from wtforms.validators import DataRequired
 
 
@@ -25,8 +25,6 @@ class LoginForm(FlaskForm):
 
 class DepositForm(FlaskForm):
     """Deposit form."""
-    amount = StringField('Amount', validators=[DataRequired()])
-    currency = StringField(
-        'Currency', validators=[DataRequired()])
-    payment_method = StringField(
-        'Payment Method', validators=[DataRequired()])
+    payment_method = SelectField(
+        'Payment Method', choices=[], validators=[DataRequired()])
+    amount = DecimalField('Amount in USD', validators=[DataRequired()])
