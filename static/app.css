@@ -128,3 +128,38 @@ nav + .container {
   font-size: 16px;
   padding: 10px;
 }
+
+/* ========================== Dashboard */
+#dashboard {
+  margin-top: 3rem;
+}
+
+#portfolio-table-wrapper {
+  border-style: solid;
+  border-color: rgb(232, 231, 253);
+  border-radius: 5px;
+  border-width: 1px;
+  padding: 25px 25px 25px 25px;
+}
+
+#portfolio-card-buttons {
+  margin-top: 3rem;
+}
+
+.portfolio-card {
+  margin-right: 5rem;
+  border-style: solid;
+  border-color: rgb(232, 231, 253);
+  border-radius: 5px;
+  border-width: 1px;
+  padding: 25px 25px 25px 25px;
+}
+
+.portfolio-table-row {
+  cursor: pointer;
+}
+
+.portfolio-card-btn {
+  width: 33%;
+  margin: 0.5rem;
+}
