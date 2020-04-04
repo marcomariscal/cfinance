@@ -8,8 +8,21 @@ body.error-404 {
   background-color: #ffffff;
 }
 
+#content {
+  margin-top: 3rem;
+}
+
 .form-control {
   margin-bottom: 20px;
+}
+
+.form-wrapper {
+  border-style: solid;
+  border-color: rgb(232, 231, 253);
+  border-radius: 5px;
+  border-width: 1px;
+  box-shadow: rgb(247, 244, 255) 0px 5px 10px 5px;
+  padding: 25px 25px 25px 25px;
 }
 
 .btn {
@@ -130,9 +143,6 @@ nav + .container {
 }
 
 /* ========================== Dashboard */
-#dashboard {
-  margin-top: 3rem;
-}
 
 #portfolio-table-wrapper {
   border-style: solid;
@@ -140,6 +150,7 @@ nav + .container {
   border-radius: 5px;
   border-width: 1px;
   padding: 25px 25px 25px 25px;
+  box-shadow: rgb(247, 244, 255) 0px 5px 10px 5px;
 }
 
 #portfolio-card-buttons {
@@ -153,6 +164,8 @@ nav + .container {
   border-radius: 5px;
   border-width: 1px;
   padding: 25px 25px 25px 25px;
+  height: 30rem;
+  box-shadow: rgb(247, 244, 255) 0px 5px 10px 5px;
 }
 
 .portfolio-table-row {

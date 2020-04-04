@@ -20,7 +20,7 @@
     <nav class="navbar navbar-expand">
       <div class="container-fluid">
         <div class="navbar-header">
-          <a href="/" class="navbar-brand">
+          <a href="/users/1/dashboard" class="navbar-brand">
             <span>CFinance</span>
           </a>
         </div>
@@ -30,13 +30,13 @@
           <li><a href="/login">Log in</a></li>
           <li><a href="/users/1/portfolio">Portfolio</a></li>
           <li><a href="/activity">Activity</a></li>
-          <li><a href="/trade">Trade</a></li>
+          <li><a href="/users/1/trade">Trade</a></li>
           <li><a href="/users/1/deposit">Deposit</a></li>
           <li><a href="/logout">Log out</a></li>
         </ul>
       </div>
     </nav>
-    <div class="container">
+    <div class="container" id="content">
       {% for category, message in get_flashed_messages(with_categories=True) %}
       <div class="alert alert-{{ category }}">{{ message }}</div>
       {% endfor %} {% block content %} {% endblock %}
@@ -56,8 +56,8 @@
       integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
       crossorigin="anonymous"
     ></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js"></script>
     <script src="https://unpkg.com/axios/dist/axios.js"></script>
-    <script src="/static/helpers.js"></script>
     <script src="/static/app.js"></script>
   </body>
 </html>

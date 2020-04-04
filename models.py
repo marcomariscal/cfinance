@@ -103,8 +103,11 @@ class Account(db.Model):
 
     currency = db.Column(db.String, nullable=False)
 
-    balance = db.Column(db.Float,
-                        nullable=False)
+    balance_native = db.Column(db.Float,
+                               nullable=False)
+
+    balance_usd = db.Column(db.Float,
+                            nullable=False)
 
     available = db.Column(db.Float, nullable=False)
 
@@ -181,7 +184,10 @@ class Allocation(db.Model):
 
     __tablename__ = "allocations"
 
-    currency = db.Column(db.String, primary_key=True,
+    id = db.Column(db.Integer,
+                   primary_key=True)
+
+    currency = db.Column(db.String,
                          nullable=False)
 
     percentage = db.Column(db.Float,
@@ -191,6 +197,11 @@ class Allocation(db.Model):
         db.Integer,
         db.ForeignKey('users.id'),
         nullable=False,
+    )
+
+    portfolio_id = db.Column(
+        db.Integer,
+        db.ForeignKey('portfolio.id')
     )
 
     user = db.relationship('User')

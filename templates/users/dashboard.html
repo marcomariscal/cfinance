@@ -1,31 +1,88 @@
 {% extends 'base.html' %} {% block content %}
-<h1>User Dashboard</h1>
-<table class="table table-hover mt-3" id="portfolio-table">
-  <thead class="thead-light">
-    <tr>
-      <th scope="col">Currency</th>
-      <th scope="col">Balance</th>
-      <th scope="col">Available</th>
-      <th scope="col">Hold</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for account in accounts %}
-    <tr class="portfolio-table-row" id="{{account.currency}}">
-      <td>
-        <img
-          src="/static/cryptocurrency-icons-master/svg/color/{{account.currency | lower}}.svg"
-          alt="{{account.currency}}"
-          class="currency-icon mr-2"
+<div class="row" id="dashboard">
+  <div class="col-4 col-md-4 portfolio-card">
+    <div class="" id="portfolio-pie-chart-wrapper">
+      <canvas id="portfolio-pie-chart" width="30" height="30"></canvas>
+    </div>
+    <div
+      class="portfolio-card-row d-flex justify-content-center"
+      id="portfolio-card-buttons"
+    >
+      <a
+        href="/users/{{user.id}}/trade"
+        class="btn btn-primary btn-md portfolio-card-btn"
+        >Trade</a
+      >
+      <a
+        href="/users/{{user.id}}/portfolio"
+        class="btn btn-primary btn-md portfolio-card-btn"
+        >Rebalance</a
+      >
+      <a
+        href="/users/{{user.id}}/deposit"
+        class="btn btn-primary btn-md portfolio-card-btn"
+        >Deposit</a
+      >
+    </div>
+  </div>
+  <div class="col" id="portfolio-table-wrapper">
+    <div
+      class="btn-group btn-group-toggle"
+      id="dashboard-currency-toggle"
+      data-toggle="buttons"
+    >
+      <label
+        id="native-toggle"
+        class="btn btn-secondary active currency-toggle"
+      >
+        <input
+          type="radio"
+          name="native-amount-toggle"
+          id="native-amount-toggle"
+          autocomplete="on"
         />
-        <span>{{account.currency}}</span>
-      </td>
-      <td>{{account.balance | float | round(2)}}</td>
-      <td>{{account.available | float | round(2)}}</td>
-      <td>{{account.hold | float | round(2) }}</td>
-    </tr>
+        Native
+      </label>
+      <label id="usd-toggle" class="btn btn-secondary currency-toggle">
+        <input
+          type="radio"
+          name="usd-amount-toggle"
+          id="usd-amount-toggle"
+          autocomplete="on"
+        />
+        USD
+      </label>
+    </div>
+    <table class="table table-hover mt-3" id="portfolio-table">
+      <thead class="thead-light">
+        <tr>
+          <th scope="col">Currency</th>
+          <th scope="col">Balance Native</th>
+          <th scope="col">Balance USD</th>
+          <th scope="col">Hold</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for account in accounts|sort(reverse=True, attribute="balance_usd")
+        %}
+        <tr class="portfolio-table-row" id="{{account.currency}}">
+          <td>
+            <img
+              src="/static/cryptocurrency-icons-master/svg/color/{{account.currency | lower}}.svg"
+              alt="{{account.currency}}"
+              class="currency-icon mr-2"
+            />
+            <span>{{account.currency}}</span>
+          </td>
+          <td>{{account.balance_native | float | round(2)}}</td>
+          <td>{{"$%.2f"|format(account.balance_usd) }}</td>
+          <td>{{account.hold | float | round(2) }}</td>
+        </tr>
 
-    {% endfor %}
-  </tbody>
-</table>
+        {% endfor %}
+      </tbody>
+    </table>
+    <h6>Total Balance in USD: {{"$%.2f"|format(total_balance)}}</h6>
+  </div>
+</div>
 {% endblock %}

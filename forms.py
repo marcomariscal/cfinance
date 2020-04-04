@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SelectField, DecimalField, FieldList, FormField
-from wtforms.validators import DataRequired
+from wtforms.validators import DataRequired, InputRequired
 
 
 class UserAddForm(FlaskForm):
@@ -26,7 +26,7 @@ class LoginForm(FlaskForm):
 class DepositForm(FlaskForm):
     """Deposit form."""
     payment_method = SelectField(
-        'Payment Method', choices=[], validators=[DataRequired()])
+        'Payment Method', choices=[], validators=[InputRequired()])
     amount = DecimalField('Amount in USD', validators=[DataRequired()])
 
 
@@ -40,3 +40,15 @@ class AllocationForm(FlaskForm):
 class PortfolioForm(FlaskForm):
     """Portfolio is a representation of all allocations for a user."""
     portfolio = FieldList(FormField(AllocationForm))
+
+
+class OrderForm(FlaskForm):
+    """Make a trade on Coinbase Pro."""
+    product_id = SelectField(
+        'From Currency', choices=[], validators=[InputRequired()])
+
+    side = SelectField(
+        'Side', choices=[('buy', 'Buy'), ('sell', 'Sell')])
+
+    funds = DecimalField('Amount in From Currency',
+                         validators=[DataRequired(message="Valid input required.")])
