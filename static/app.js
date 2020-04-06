@@ -18,31 +18,38 @@ $(function() {
   // append pie chart to dom
   (async () => {
     let data = await portfolioAllocationPcts();
-
-    const labels = null;
+    const labels = Object.keys(data);
     const datasets = [
       {
         label: "% of Total Assets",
         data: Object.values(data),
         backgroundColor: [
-          "rgba(255, 99, 132, 0.2)",
-          "rgba(54, 162, 235, 0.2)",
-          "rgba(255, 206, 86, 0.2)",
-          "rgba(75, 192, 192, 0.2)",
-          "rgba(153, 102, 255, 0.2)"
+          "rgba(255, 99, 132, 0.8)",
+          "rgba(54, 162, 235, 0.8)",
+          "rgba(255, 206, 86, 0.8)",
+          "rgba(75, 192, 192, 0.8)",
+          "rgba(153, 102, 255, 0.8)",
+          "rgba(45, 102, 255, 0.8)"
         ],
         borderColor: [
-          "rgba(255, 99, 132, 1)",
-          "rgba(54, 162, 235, 1)",
-          "rgba(255, 206, 86, 1)",
-          "rgba(75, 192, 192, 1)",
-          "rgba(153, 102, 255, 1)"
+          "rgba(255, 99, 132, 0.8)",
+          "rgba(54, 162, 235, 0.8)",
+          "rgba(255, 206, 86, 0.8)",
+          "rgba(75, 192, 192, 0.8)",
+          "rgba(153, 102, 255, 0.8)",
+          "rgba(45, 102, 255, 0.8)"
         ],
         borderWidth: 1
       }
     ];
 
-    const options = {};
+    const options = {
+      legend: false,
+      tooltips: {
+        backgroundColor: "rgba(0,0,0,1.0)",
+        bodyFontColor: "rgba(255,255,255,1.0)"
+      }
+    };
 
     const pieData = {
       labels: labels,
@@ -51,7 +58,7 @@ $(function() {
 
     let ctx = $portfolioPieChart;
     let myPieChart = new Chart(ctx, {
-      type: "pie",
+      type: "doughnut",
       data: pieData,
       options: options
     });

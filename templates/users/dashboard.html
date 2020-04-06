@@ -9,17 +9,17 @@
       id="portfolio-card-buttons"
     >
       <a
-        href="/users/{{user.id}}/trade"
+        href="{{url_for('trade', user_id=user.id)}}"
         class="btn btn-primary btn-md portfolio-card-btn"
         >Trade</a
       >
       <a
-        href="/users/{{user.id}}/portfolio"
+        href="{{url_for('rebalance', user_id=user.id)}}"
         class="btn btn-primary btn-md portfolio-card-btn"
         >Rebalance</a
       >
       <a
-        href="/users/{{user.id}}/deposit"
+        href="{{url_for('deposit', user_id=user.id)}}"
         class="btn btn-primary btn-md portfolio-card-btn"
         >Deposit</a
       >
@@ -56,7 +56,7 @@
     <table class="table table-hover mt-3" id="portfolio-table">
       <thead class="thead-light">
         <tr>
-          <th scope="col">Currency</th>
+          <th scope="col">Asset</th>
           <th scope="col">Balance Native</th>
           <th scope="col">Balance USD</th>
           <th scope="col">Hold</th>

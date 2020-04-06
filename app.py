@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, flash, redirect, session, g, jsonify
+from flask import Flask, render_template, request, flash, redirect, session, g, jsonify, url_for
 from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
 import requests
@@ -141,6 +141,7 @@ def dashboard(user_id):
 
     # update the user's accounts in the db and return the accounts
     update_user_info(user_id)
+
     user = User.query.get(user_id)
     accounts = user.accounts
     total_balance = total_balance_usd(user_id)
@@ -180,8 +181,8 @@ def deposit(user_id):
     return render_template("users/deposit.html", form=form)
 
 
-@app.route('/users/<int:user_id>/portfolio', methods=["GET", "POST"])
-def allocations(user_id):
+@app.route('/users/<int:user_id>/rebalance', methods=["GET", "POST"])
+def rebalance(user_id):
     """View and set allocations for a user's portfolio of currencies."""
     # if not g.user:
     #     flash("Access unauthorized.", "danger")
@@ -189,17 +190,21 @@ def allocations(user_id):
     form = PortfolioForm()
 
     # get all available account currencies for this user
-    user = User.query.get(user_id)
-    currencies = [account.currency for account in user.accounts]
+    assets = portfolio_pct_allocations(user_id)
+    assets = assets.items()
 
-    for currency in currencies:
+    for asset, pct in assets:
         allocation_form = AllocationForm()
-        allocation_form.currency = currency
-        allocation_form.percentage = 0
+        allocation_form.currency = asset
+        allocation_form.percentage = pct * 100
 
         form.portfolio.append_entry(allocation_form)
 
-    return render_template('/users/portfolio.html', form=form)
+    if form.validate_on_submit():
+        flash('Rebalance Initiated')
+        redirect(url_for(dashboard, user_id=user_id))
+
+    return render_template('/users/rebalance.html', form=form, assets=assets)
 
 
 @app.route('/users/<int:user_id>/trade', methods=['GET', 'POST'])

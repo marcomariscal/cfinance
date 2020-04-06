@@ -115,10 +115,6 @@ def get_currencies():
     return json
 
 
-def get_asset_allocation_percentages(user_id):
-    user = User.query.get(user_id)
-
-
 def convert_currency(from_currency, to_currency, amount):
     """Convert a currency amount to different currency."""
 

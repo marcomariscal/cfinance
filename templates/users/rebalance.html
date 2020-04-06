@@ -1,0 +1,47 @@
+{% extends 'base.html' %} {% block content %}
+<div class="row justify-content-md-center">
+  <div class="rebalance-wrapper">
+    <div class="form-wrapper">
+      <form method="POST" id="rebalance-form">
+        <table class="table table-hover mt-3">
+          <thead class="thead-light">
+            <tr>
+              <th scope="col">Asset</th>
+              <th scope="col">% Actual</th>
+              <th scope="col">% Target</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for asset in form.portfolio if asset.widget.input_type !=
+            'hidden' %} {% for error in asset.errors %}
+            <span class="text-danger">{{ error }}</span>
+            {% endfor %}
+
+            <tr class="rebalance-table-row" id="{{asset.currency.data}}">
+              <td>
+                <img
+                  src="/static/cryptocurrency-icons-master/svg/color/{{asset.currency.data| lower}}.svg"
+                  alt="{{asset.currency.data}}"
+                  class="currency-icon mr-2"
+                />
+                <span>{{asset.currency.data}}</span>
+              </td>
+              <td>
+                {{ asset.percentage.data | round(2) }}
+              </td>
+              <td>
+                {{ asset.percentage }}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        <button class="btn btn-primary btn-lg" id="rebalance-submit">
+          Rebalance
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
