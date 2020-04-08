@@ -5,7 +5,7 @@ import requests
 import os
 
 from models import db, connect_db, User, CoinbaseExchangeAuth, Account, Deposit, Currency
-from forms import UserAddForm, LoginForm, DepositForm, AllocationForm, PortfolioForm, OrderForm
+from forms import UserAddForm, LoginForm, DepositForm, PortfolioForm, OrderForm, AllocationForm
 
 from helpers.helpers import *
 
@@ -87,13 +87,12 @@ def signup():
             )
             db.session.commit()
 
+            do_login(user)
+            redirect(url_for('.dashboard', user_id=user.id))
+
         except IntegrityError as e:
             flash("Unable to authorize access to Coinbase Pro", 'danger')
             return render_template('users/signup.html', form=form)
-
-        do_login(user)
-
-        return redirect(f"/users/{user.id}/dashboard")
 
     else:
         return render_template('users/signup.html', form=form)
@@ -112,7 +111,7 @@ def login():
         if user:
             do_login(user)
             flash(f"Welcome Back!", "success")
-            return redirect(f"/users/{user.id}/dashboard")
+            redirect(url_for('.dashboard', user_id=user.id))
 
         flash("Invalid credentials.", 'danger')
 
@@ -176,8 +175,9 @@ def deposit(user_id):
 
         res = handle_deposit(user_id, auth, amount,
                              currency, payment_method_id)
-        redirect('/')
         flash("Deposit initiated!", "success")
+        return redirect(url_for('deposit', user_id=user_id))
+
     return render_template("users/deposit.html", form=form)
 
 
@@ -194,15 +194,36 @@ def rebalance(user_id):
     assets = assets.items()
 
     for asset, pct in assets:
-        allocation_form = AllocationForm()
-        allocation_form.currency = asset
-        allocation_form.percentage = pct * 100
 
-        form.portfolio.append_entry(allocation_form)
+        allocation = AllocationForm()
+        allocation.currency = asset
+        allocation.percentage = pct * 100
 
-    if form.validate_on_submit():
-        flash('Rebalance Initiated')
-        redirect(url_for(dashboard, user_id=user_id))
+        form.portfolio.append_entry(allocation)
+
+    if request.method == "POST":
+
+        updated_portfolio = []
+
+        for item in form.portfolio.data[:len(assets)]:
+
+            currency = item["currency"]
+            percentage = float(item["percentage"] / 100)
+
+            updated_portfolio.append(
+                {"currency": currency, "percentage": percentage})
+
+            # portfolio allocations should equal 100%
+            is_valid_portfolio = sum(
+                [item["percentage"] for item in updated_portfolio]) == 1
+
+            if not is_valid_portfolio:
+                flash('Allocations should add up to 100%', 'danger')
+                return redirect(url_for('rebalance', user_id=user_id))
+
+            # update_portfolio(updated_portfolio)
+            flash('Rebalance Initiated', 'success')
+            return redirect(url_for('rebalance', user_id=user_id))
 
     return render_template('/users/rebalance.html', form=form, assets=assets)
 
@@ -228,7 +249,7 @@ def trade(user_id):
 
         if data:
             flash('Your order was placed', f'{data}')
-            # redirect(f'/{user_id}/trade')
+            return redirect(url_for('trade', user_id=user_id))
 
     return render_template('users/trade.html', form=form)
 

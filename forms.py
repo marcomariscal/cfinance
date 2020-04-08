@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SelectField, DecimalField, FieldList, FormField, IntegerField
-from wtforms.validators import DataRequired, InputRequired
+from wtforms import StringField, PasswordField, SelectField, DecimalField, FieldList, FormField, IntegerField, HiddenField
+from wtforms.validators import DataRequired, InputRequired, Required
 
 
 class UserAddForm(FlaskForm):
@@ -32,14 +32,20 @@ class DepositForm(FlaskForm):
 
 class AllocationForm(FlaskForm):
     """Allocations form."""
-    currency = StringField(
-        'Currency', validators=[DataRequired()])
-    percentage = DecimalField('%', validators=[DataRequired()])
+    class Meta:
+        csrf = False
+
+    currency = HiddenField('Currency')
+    percentage = DecimalField('%', validators=[InputRequired()], places=0)
 
 
 class PortfolioForm(FlaskForm):
     """Portfolio is a representation of all allocations for a user."""
-    portfolio = FieldList(FormField(AllocationForm))
+    portfolio = FieldList(FormField(AllocationForm), validators=[Required()])
+
+    def validate(self):
+        if self.request == 'POST':
+            return True
 
 
 class OrderForm(FlaskForm):

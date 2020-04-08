@@ -176,3 +176,8 @@ nav + .container {
   width: 33%;
   margin: 0.5rem;
 }
+
+.fas.fa-caret-up,
+.fas.fa-caret-down {
+  font-size: 1.3rem;
+}

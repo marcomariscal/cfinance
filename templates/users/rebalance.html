@@ -12,11 +12,8 @@
             </tr>
           </thead>
           <tbody>
-            {% for asset in form.portfolio if asset.widget.input_type !=
-            'hidden' %} {% for error in asset.errors %}
-            <span class="text-danger">{{ error }}</span>
-            {% endfor %}
-
+            {{ form.hidden_tag() }} {% for asset in form.portfolio if
+            asset.widget.input_type != 'hidden' %} {{asset.hidden_tag()}}
             <tr class="rebalance-table-row" id="{{asset.currency.data}}">
               <td>
                 <img
@@ -27,10 +24,14 @@
                 <span>{{asset.currency.data}}</span>
               </td>
               <td>
-                {{ asset.percentage.data | round(2) }}
+                {{ asset.percentage.data | int }}
               </td>
               <td>
-                {{ asset.percentage }}
+                {{ asset.percentage(class="form-control") }}
+              </td>
+              <td>
+                <span><i class="fas fa-caret-up"></i></span>
+                <span><i class="fas fa-caret-down"></i></span>
               </td>
             </tr>
             {% endfor %}
@@ -41,6 +42,9 @@
           Rebalance
         </button>
       </form>
+      <p>
+        {{res}}
+      </p>
     </div>
   </div>
 </div>
