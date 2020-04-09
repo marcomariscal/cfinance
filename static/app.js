@@ -2,6 +2,10 @@ $(function() {
   const $portfolioTableRow = $(".portfolio-table-row");
   const $currencyInfo = $(".currency-info");
   const $portfolioPieChart = $("#portfolio-pie-chart");
+  const $portfolioPctTotal = $("#portfolio-pct-total");
+  const $portfolioPctInputs = $(".portfolio-pct-input");
+  const $arrows = $(".fas.fa-caret-up, .fas.fa-caret-down");
+  const $rebalanceSubmit = $("#rebalance-submit");
 
   $portfolioTableRow.on("click", function() {
     const id = $(this).attr("id");
@@ -63,4 +67,42 @@ $(function() {
       options: options
     });
   })();
+
+  function handlePctInputChange() {
+    let portfolioPctSum = 0;
+    $portfolioPctInputs.each((index, element) => {
+      portfolioPctSum += parseInt(element.value);
+    });
+
+    // adjust class to highlight in red if inputs don't add up to 100%
+    portfolioPctSum !== 100
+      ? $portfolioPctTotal.addClass("invalid-sum alert alert-warning")
+      : $portfolioPctTotal.removeClass("invalid-sum alert alert-warning");
+
+    // ensure all inputs exists
+    isNaN(portfolioPctSum)
+      ? $portfolioPctTotal.html("Updating...")
+      : $portfolioPctTotal.html(
+          $(`<p>Current Allocation Total: ${portfolioPctSum}</p>%`)
+        );
+  }
+
+  function handleArrowClick() {
+    const $arrow = $(this);
+    let $pctInput = $(this)
+      .parent()
+      .parent()
+      .siblings()[2].children[0];
+
+    let pctInputVal = $pctInput.value;
+
+    // check the class for up or down arrow to be able to increment or decrement accordingly
+    $arrow.hasClass("fa-caret-up") ? pctInputVal++ : pctInputVal--;
+
+    if (pctInputVal < 0 || pctInputVal > 100) return;
+    $pctInput.value = pctInputVal;
+  }
+
+  $arrows.on("click", handleArrowClick);
+  $portfolioPctInputs.on("input", handlePctInputChange);
 });

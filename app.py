@@ -208,22 +208,22 @@ def rebalance(user_id):
         for item in form.portfolio.data[:len(assets)]:
 
             currency = item["currency"]
-            percentage = float(item["percentage"] / 100)
+            percentage = item["percentage"] / 100
 
             updated_portfolio.append(
                 {"currency": currency, "percentage": percentage})
 
-            # portfolio allocations should equal 100%
-            is_valid_portfolio = sum(
-                [item["percentage"] for item in updated_portfolio]) == 1
+        # portfolio allocations should equal 100%
+        is_valid_portfolio = sum(
+            [item["percentage"] for item in updated_portfolio]) == 1.0
 
-            if not is_valid_portfolio:
-                flash('Allocations should add up to 100%', 'danger')
-                return redirect(url_for('rebalance', user_id=user_id))
-
-            # update_portfolio(updated_portfolio)
-            flash('Rebalance Initiated', 'success')
+        if not is_valid_portfolio:
+            flash('Allocations should add up to 100%', 'danger')
             return redirect(url_for('rebalance', user_id=user_id))
+
+        # update_portfolio(updated_portfolio)
+        flash('Rebalance Initiated', 'success')
+        return redirect(url_for('rebalance', user_id=user_id))
 
     return render_template('/users/rebalance.html', form=form, assets=assets)
 

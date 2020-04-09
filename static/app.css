@@ -12,6 +12,11 @@ body.error-404 {
   margin-top: 3rem;
 }
 
+.table th,
+td {
+  text-align: center;
+}
+
 .form-control {
   margin-bottom: 20px;
 }
@@ -172,6 +177,16 @@ nav + .container {
   cursor: pointer;
 }
 
+.td-input {
+  width: 33%;
+  margin: 0px 0px 0px 0px;
+}
+
+.portfolio-pct-input {
+  margin: auto;
+  width: 50%;
+}
+
 .portfolio-card-btn {
   width: 33%;
   margin: 0.5rem;
@@ -180,4 +195,17 @@ nav + .container {
 .fas.fa-caret-up,
 .fas.fa-caret-down {
   font-size: 1.3rem;
+  cursor: pointer;
+}
+
+.fas.fa-caret-up {
+  color: #1c115f;
+}
+
+.fas.fa-caret-down {
+  color: #a1e9b9;
+}
+
+.invalid-sum {
+  color: red;
 }

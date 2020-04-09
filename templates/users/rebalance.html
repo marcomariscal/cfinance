@@ -9,13 +9,14 @@
               <th scope="col">Asset</th>
               <th scope="col">% Actual</th>
               <th scope="col">% Target</th>
+              <th scope="col"></th>
             </tr>
           </thead>
           <tbody>
             {{ form.hidden_tag() }} {% for asset in form.portfolio if
             asset.widget.input_type != 'hidden' %} {{asset.hidden_tag()}}
             <tr class="rebalance-table-row" id="{{asset.currency.data}}">
-              <td>
+              <td class="align-middle">
                 <img
                   src="/static/cryptocurrency-icons-master/svg/color/{{asset.currency.data| lower}}.svg"
                   alt="{{asset.currency.data}}"
@@ -23,13 +24,14 @@
                 />
                 <span>{{asset.currency.data}}</span>
               </td>
-              <td>
+              <td class="align-middle">
                 {{ asset.percentage.data | int }}
               </td>
-              <td>
-                {{ asset.percentage(class="form-control") }}
+              <td class="align-middle td-input">
+                {{ asset.percentage(class="form-control form-control-sm
+                text-center portfolio-pct-input") }}
               </td>
-              <td>
+              <td class="align-middle">
                 <span><i class="fas fa-caret-up"></i></span>
                 <span><i class="fas fa-caret-down"></i></span>
               </td>
@@ -37,14 +39,12 @@
             {% endfor %}
           </tbody>
         </table>
+        <div id="portfolio-pct-total"></div>
 
         <button class="btn btn-primary btn-lg" id="rebalance-submit">
           Rebalance
         </button>
       </form>
-      <p>
-        {{res}}
-      </p>
     </div>
   </div>
 </div>
