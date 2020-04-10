@@ -1,7 +1,18 @@
 {% extends 'base.html' %} {% block content %}
-<div class="home-user">
-  <h3>Sign up with your Coinbase Pro API Key</h3>
-  <p>Free automated cryptocurrency investing tool and portfolio visualizer</p>
+<div class="home-user form-wrapper">
+  <h3>
+    Sign up with your
+
+    <a href="https://pro.coinbase.com/profile/api" alt="Create Your API Key"
+      >Coinbase Pro API Key</a
+    >
+  </h3>
+  <h6>Free automated cryptocurrency investing tool and portfolio visualizer</h6>
+  <br />
+  <p>
+    For more info on creating an API key on Coinbase Pro
+    <a href="/info">click here</a>
+  </p>
   <a href="/signup" class="btn btn-primary">Sign up</a>
 </div>
 {% endblock %}

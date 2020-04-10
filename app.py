@@ -316,7 +316,7 @@ def currency(currency):
 
 
 ##############################################################################
-# Homepage and error pages
+# Homepage, info, and error pages
 
 
 @app.route('/')
@@ -328,6 +328,13 @@ def homepage():
 
     else:
         return render_template('home-anon.html')
+
+
+@app.route('/info')
+def info():
+    """Show info page with instructions about creating an API key."""
+
+    return render_template('info.html')
 
 
 @app.errorhandler(404)

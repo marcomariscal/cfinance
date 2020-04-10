@@ -1,0 +1,39 @@
+{% extends 'base.html' %} {% block content %}
+<div class="home-user form-wrapper">
+  <h3>To create an API key</h3>
+  <ol>
+    <li>Make sure you already have a Coinbase account</li>
+    <li>
+      <p>
+        Go to
+        <a href="https://pro.coinbase.com/profile/api"
+          >your Coinbase Pro profile</a
+        >
+        To create an API key with your desired permissions (we suggest selecting
+        all permissions for the best experience and to be able to trade freely
+        here
+      </p>
+      <ol>
+        <li>Select "New API Key"</li>
+        <li>
+          Select desired permissions and retain passphrase (this will be used to
+          sign up here)
+        </li>
+        <li>
+          Select "Create API Key and retain your "API secret" (this will be used
+          to sign up here)
+        </li>
+        <li>Your API Key is now ready to be used!</li>
+      </ol>
+    </li>
+    <li>
+      If you have further questions on creating a key, please refer to the
+      documentation
+
+      <a href="https://docs.pro.coinbase.com/?python#generating-an-api-key"
+        >here</a
+      >
+    </li>
+  </ol>
+</div>
+{% endblock %}
