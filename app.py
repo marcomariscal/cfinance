@@ -44,16 +44,21 @@ def add_user_to_g():
     else:
         g.user = None
 
-
-def do_login(user):
-    """Log in user."""
-
-    session[CURR_USER_KEY] = user.id
+        ######################
+        # three different modes: real, sandbox, and demo
+        # use different api urls dependent upon mode
+        # use differenet auth dependent upon mode: if user in sandbox mode, we can provide auth
 
 
 def update_user_info(user_id):
     update_user_accounts(user_id, auth)
     update_allocations(user_id)
+
+
+def do_login(user):
+    """Log in user."""
+
+    session[CURR_USER_KEY] = user.id
 
 
 def do_logout():
@@ -149,7 +154,7 @@ def dashboard(user_id):
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
-    # update the user's accounts in the db and return the accounts
+    # update the user's accounts in the db
     update_user_info(user_id)
 
     user = User.query.get_or_404(user_id)
@@ -161,43 +166,17 @@ def dashboard(user_id):
     return render_template("users/dashboard.html", user=user, accounts=accounts, total_balance=total_balance, portfolio=portfolio)
 
 
-@app.route('/users/<int:user_id>/deposit', methods=["GET", "POST"])
-def deposit(user_id):
-    """Deposit funds into Coinbase Pro."""
-    # if not g.user:
-    #     flash("Access unauthorized.", "danger")
-    #     return redirect("/")
-
-    user = User.query.get(user_id)
-
-    form = DepositForm()
-
-    # get payment methods from coinbase and put in db
-    update_payment_methods(user_id, "USD", auth)
-
-    # get payment methods from db
-    form.payment_method.choices = [(method.id, method.name)
-                                   for method in user.payment_methods]
-
-    if form.validate_on_submit():
-        payment_method_id = form.payment_method.data
-        amount = form.amount.data
-        currency = "USD"
-
-        res = handle_deposit(user_id, auth, amount,
-                             currency, payment_method_id)
-        flash("Deposit initiated!", "success")
-        return redirect(url_for('deposit', user_id=user_id))
-
-    return render_template("users/deposit.html", form=form)
-
-
 @app.route('/users/<int:user_id>/rebalance', methods=["GET", "POST"])
 def rebalance(user_id):
     """View and set allocations for a user's portfolio of currencies."""
-    # if not g.user:
-    #     flash("Access unauthorized.", "danger")
-    #     return redirect("/")
+
+    if not g.user:
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
+
+    # update the user's accounts in the db
+    update_user_info(user_id)
+
     form = PortfolioForm()
 
     # get all available account currencies for this user
@@ -252,6 +231,12 @@ def rebalance(user_id):
 
 @app.route('/users/<int:user_id>/trade', methods=['GET', 'POST'])
 def trade(user_id):
+    """Place orders on Coinbase Pro."""
+
+    if not g.user:
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
+
     user = User.query.get(user_id)
 
     valid_products = get_valid_products_for_orders(user.accounts)
@@ -274,6 +259,38 @@ def trade(user_id):
             return redirect(url_for('trade', user_id=user_id))
 
     return render_template('users/trade.html', form=form)
+
+
+@app.route('/users/<int:user_id>/deposit', methods=["GET", "POST"])
+def deposit(user_id):
+    """Deposit funds into Coinbase Pro."""
+
+    if not g.user:
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
+
+    user = User.query.get_or_404(user_id)
+
+    form = DepositForm()
+
+    # get payment methods from coinbase and put in db
+    update_payment_methods(user_id, "USD", auth)
+
+    # get payment methods from db
+    form.payment_method.choices = [(method.id, method.name)
+                                   for method in user.payment_methods]
+
+    if form.validate_on_submit():
+        payment_method_id = form.payment_method.data
+        amount = form.amount.data
+        currency = "USD"
+
+        res = handle_deposit(user_id, auth, amount,
+                             currency, payment_method_id)
+        flash("Deposit initiated!", "success")
+        return redirect(url_for('deposit', user_id=user_id))
+
+    return render_template("users/deposit.html", form=form)
 
 
 ##############################################################################
@@ -307,7 +324,7 @@ def homepage():
     """Show homepage."""
 
     if g.user:
-        return render_template('home.html')
+        return render_template('dashboard.html', user_id=g.user.id)
 
     else:
         return render_template('home-anon.html')

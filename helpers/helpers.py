@@ -225,12 +225,12 @@ def rebalance_portfolio(user_id, portfolio):
     (i.e.: a portfolio composed of 50% BTC and 50% ETH will be bought according to those percentages, based on how the
     portfolio is currently allocated)
 
-    Portfolio input object is of the type:
+    Portfolio input is a list of currency objects:
 
         [{"currency": currency, "percentage": percentage}]
 
     """
-    user = User.query.get(user_id)
+    user = User.query.get_or_404(user_id)
     accounts = user.accounts
 
     currencies = [(account.currency, account.balance_native)
