@@ -92,7 +92,7 @@ $(function() {
     let $pctInput = $(this)
       .parent()
       .parent()
-      .siblings()[2].children[0];
+      .siblings()[3].children[0];
 
     let pctInputVal = $pctInput.value;
 

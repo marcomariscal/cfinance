@@ -7,6 +7,9 @@ import time
 import requests
 import base64
 from requests.auth import AuthBase
+from binascii import Error
+
+API_URL = "https://api-public.sandbox.pro.coinbase.com/"
 
 bcrypt = Bcrypt()
 db = SQLAlchemy()
@@ -34,6 +37,12 @@ class User(db.Model):
     payment_methods = db.relationship('PaymentMethod',
                                       backref='user')
 
+    target_allocations = db.relationship('TargetAllocation',
+                                         backref='user')
+
+    current_allocations = db.relationship('CurrentAllocation',
+                                          backref='user')
+
     def __repr__(self):
         return f"<User #{self.id}: {self.api_key}>"
 
@@ -50,7 +59,10 @@ class User(db.Model):
         coinbase_auth = CoinbaseExchangeAuth(
             api_key, api_secret, api_passphrase)
 
-        if coinbase_auth:
+        # test the auth to see if valid user exists in CBP
+        auth = CoinbaseExchangeAuth.test_auth(coinbase_auth)
+
+        if auth:
 
             hashed_secret = bcrypt.generate_password_hash(
                 api_secret).decode('UTF-8')
@@ -179,15 +191,12 @@ class Currency(db.Model):
                      nullable=False)
 
 
-class Allocation(db.Model):
-    """Allocation percentages per currency for a user."""
+class TargetAllocation(db.Model):
+    """Target allocation percentages per currency for a user."""
 
-    __tablename__ = "allocations"
+    __tablename__ = "target_allocations"
 
-    id = db.Column(db.Integer,
-                   primary_key=True)
-
-    currency = db.Column(db.String,
+    currency = db.Column(db.String, primary_key=True,
                          nullable=False)
 
     percentage = db.Column(db.Float,
@@ -199,21 +208,17 @@ class Allocation(db.Model):
         nullable=False,
     )
 
-    portfolio_id = db.Column(
-        db.Integer,
-        db.ForeignKey('portfolio.id')
-    )
 
-    user = db.relationship('User')
+class CurrentAllocation(db.Model):
+    """Current allocation percentages per currency for a user."""
 
+    __tablename__ = "current_allocations"
 
-class Portfolio(db.Model):
-    """A portfolio of many allocations for a user."""
+    currency = db.Column(db.String, primary_key=True,
+                         nullable=False)
 
-    __tablename__ = "portfolio"
-
-    id = db.Column(db.Integer, primary_key=True,
-                   nullable=False)
+    percentage = db.Column(db.Float,
+                           nullable=False)
 
     user_id = db.Column(
         db.Integer,
@@ -221,15 +226,8 @@ class Portfolio(db.Model):
         nullable=False,
     )
 
-    user = db.relationship('User',
-                           backref='portfolio')
-
-    allocations = db.relationship('Allocation',
-                                  backref='portfolio')
 
 # Create custom authentication for Exchange
-
-
 class CoinbaseExchangeAuth(AuthBase):
     def __init__(self, api_key, secret_key, passphrase):
         self.api_key = api_key
@@ -252,6 +250,21 @@ class CoinbaseExchangeAuth(AuthBase):
             'Content-Type': 'application/json'
         })
         return request
+
+    @classmethod
+    def test_auth(cls, auth):
+        """Test the auth with an API call to validate that a user exists in Coinbase Pro."""
+        try:
+            r = requests.get(API_URL + 'accounts', auth=auth)
+            data = r.json()
+
+            if data:
+                return True
+
+        except Error:
+            return False
+
+        return False
 
 
 def connect_db(app):

@@ -4,8 +4,8 @@ from sqlalchemy.exc import IntegrityError
 import requests
 import os
 
-from models import db, connect_db, User, CoinbaseExchangeAuth, Account, Deposit, Currency
-from forms import UserAddForm, LoginForm, DepositForm, PortfolioForm, OrderForm, AllocationForm
+from models import db, connect_db, User, CoinbaseExchangeAuth, Account, Deposit, Currency, TargetAllocation
+from forms import UserAddForm, LoginForm, DepositForm, PortfolioForm, OrderForm, TargetAllocationForm
 
 from helpers.helpers import *
 
@@ -69,13 +69,14 @@ def signup():
 
     Create new user and add to DB. Redirect to user's dashboard.
 
-    If form not valid, present form.
+    If form not valid, present form again.
 
     If the user can't be authed within Coinbase, flash message
     and re-present form.
     """
     if CURR_USER_KEY in session:
         del session[CURR_USER_KEY]
+
     form = UserAddForm()
 
     if form.validate_on_submit():
@@ -85,14 +86,22 @@ def signup():
                 api_secret=form.api_secret.data,
                 api_passphrase=form.api_passphrase.data,
             )
-            db.session.commit()
 
-            do_login(user)
-            redirect(url_for('.dashboard', user_id=user.id))
+            if user:
+                db.session.commit()
+                do_login(user)
+                return redirect(url_for('dashboard', user_id=user.id))
+            else:
+                flash('Unable to authorize access to Coinbase Pro', 'danger')
+                return redirect(url_for('signup'))
 
-        except IntegrityError as e:
-            flash("Unable to authorize access to Coinbase Pro", 'danger')
-            return render_template('users/signup.html', form=form)
+        except IntegrityError:
+            flash(
+                'User already exists here: please log in', 'warning')
+            return redirect(url_for('login'))
+
+        except TypeError:
+            flash('Unable to authorize access to Coinbase Pro', 'danger')
 
     else:
         return render_template('users/signup.html', form=form)
@@ -111,9 +120,11 @@ def login():
         if user:
             do_login(user)
             flash(f"Welcome Back!", "success")
-            redirect(url_for('.dashboard', user_id=user.id))
+            return redirect(url_for('dashboard', user_id=user.id))
 
-        flash("Invalid credentials.", 'danger')
+        else:
+            flash("Invalid credentials.", 'danger')
+            return redirect(url_for('login'))
 
     return render_template('users/login.html', form=form)
 
@@ -134,14 +145,14 @@ def logout():
 def dashboard(user_id):
     """Show user's dashboard."""
 
-    # if not g.user:
-    #     flash("Access unauthorized.", "danger")
-    #     return redirect("/")
+    if not g.user:
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
 
     # update the user's accounts in the db and return the accounts
     update_user_info(user_id)
 
-    user = User.query.get(user_id)
+    user = User.query.get_or_404(user_id)
     accounts = user.accounts
     total_balance = total_balance_usd(user_id)
 
@@ -195,7 +206,7 @@ def rebalance(user_id):
 
     for asset, pct in assets:
 
-        allocation = AllocationForm()
+        allocation = TargetAllocationForm()
         allocation.currency = asset
         allocation.percentage = pct * 100
 
@@ -221,8 +232,19 @@ def rebalance(user_id):
             flash('Allocations should add up to 100%', 'danger')
             return redirect(url_for('rebalance', user_id=user_id))
 
-        # update_portfolio(updated_portfolio)
+        # add target allocations to db
+        updated_targets = []
+
+        for asset in updated_portfolio:
+            target = TargetAllocation(
+                currency=asset["currency"], percentage=asset["percentage"], user_id=user_id)
+            updated_targets.append(target)
+
+        db.session.add_all(updated_targets)
+        db.session.commit()
+
         flash('Rebalance Initiated', 'success')
+
         return redirect(url_for('rebalance', user_id=user_id))
 
     return render_template('/users/rebalance.html', form=form, assets=assets)
@@ -248,7 +270,7 @@ def trade(user_id):
         data = place_order(user_id, auth, side, funds, product_id)
 
         if data:
-            flash('Your order was placed', f'{data}')
+            flash('Your order was placed', 'success')
             return redirect(url_for('trade', user_id=user_id))
 
     return render_template('users/trade.html', form=form)
@@ -267,7 +289,7 @@ def get_portfolio_pct_allocations(user_id):
 # Currency pages
 @app.route('/currencies/<string:currency>')
 def currency(currency):
-    """Show currency info."""
+    """Show curreny info."""
 
     response = requests.get(f"{API_URL}products/{currency}-btc/ticker")
     data = response.json()

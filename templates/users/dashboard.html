@@ -56,27 +56,34 @@
     <table class="table table-hover mt-3" id="portfolio-table">
       <thead class="thead-light">
         <tr>
+          <th scope="col"></th>
           <th scope="col">Asset</th>
           <th scope="col">Balance Native</th>
           <th scope="col">Balance USD</th>
-          <th scope="col">Hold</th>
+          <th scope="col">Available</th>
         </tr>
       </thead>
       <tbody>
         {% for account in accounts|sort(reverse=True, attribute="balance_usd")
         %}
         <tr class="portfolio-table-row" id="{{account.currency}}">
-          <td>
+          <td class="align-middle">
             <img
               src="/static/cryptocurrency-icons-master/svg/color/{{account.currency | lower}}.svg"
               alt="{{account.currency}}"
               class="currency-icon mr-2"
             />
+          </td>
+          <td class="align-middle">
             <span>{{account.currency}}</span>
           </td>
-          <td>{{account.balance_native | float | round(2)}}</td>
-          <td>{{"$%.2f"|format(account.balance_usd) }}</td>
-          <td>{{account.hold | float | round(2) }}</td>
+          <td class="align-middle">
+            {{account.balance_native | float | round(2)}}
+          </td>
+          <td class="align-middle">{{"$%.2f"|format(account.balance_usd) }}</td>
+          <td class="align-middle">
+            {{account.available | float | round(2) }}
+          </td>
         </tr>
 
         {% endfor %}

@@ -30,7 +30,7 @@ class DepositForm(FlaskForm):
     amount = DecimalField('Amount in USD', validators=[DataRequired()])
 
 
-class AllocationForm(FlaskForm):
+class TargetAllocationForm(FlaskForm):
     """Allocations form."""
     class Meta:
         csrf = False
@@ -40,8 +40,9 @@ class AllocationForm(FlaskForm):
 
 
 class PortfolioForm(FlaskForm):
-    """Portfolio is a representation of all allocations for a user."""
-    portfolio = FieldList(FormField(AllocationForm), validators=[Required()])
+    """Portfolio is a representation of all target allocations for a user."""
+    portfolio = FieldList(FormField(TargetAllocationForm),
+                          validators=[Required()])
 
     def validate(self):
         if self.request == 'POST':

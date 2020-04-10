@@ -6,10 +6,11 @@
         <table class="table table-hover mt-3">
           <thead class="thead-light">
             <tr>
+              <th scope="col"></th>
               <th scope="col">Asset</th>
               <th scope="col">% Actual</th>
               <th scope="col">% Target</th>
-              <th scope="col"></th>
+              <th scope="col">+/-</th>
             </tr>
           </thead>
           <tbody>
@@ -22,12 +23,14 @@
                   alt="{{asset.currency.data}}"
                   class="currency-icon mr-2"
                 />
+              </td>
+              <td class="align-middle">
                 <span>{{asset.currency.data}}</span>
               </td>
               <td class="align-middle">
-                {{ asset.percentage.data | int }}
+                {{ asset.percentage.data | round(0) | int }}
               </td>
-              <td class="align-middle td-input">
+              <td class="td-input align-middle">
                 {{ asset.percentage(class="form-control form-control-sm
                 text-center portfolio-pct-input") }}
               </td>
