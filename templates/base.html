@@ -26,12 +26,15 @@
         </div>
 
         <ul class="nav navbar-nav navbar-right">
+          {% if not g.user %}
           <li><a href="/signup">Sign up</a></li>
           <li><a href="/login">Log in</a></li>
-          <li><a href="/users/1/rebalance">Rebalance</a></li>
-          <li><a href="/users/1/trade">Trade</a></li>
-          <li><a href="/users/1/deposit">Deposit</a></li>
+          {% else %}
+          <li><a href="/users/{{g.user.id}}/rebalance">Rebalance</a></li>
+          <li><a href="/users/{{g.user.id}}/trade">Trade</a></li>
+          <li><a href="/users/{{g.user.id}}/deposit">Deposit</a></li>
           <li><a href="/logout">Log out</a></li>
+          {% endif %}
         </ul>
       </div>
     </nav>
