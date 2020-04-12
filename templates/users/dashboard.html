@@ -60,12 +60,12 @@
           <th scope="col">Asset</th>
           <th scope="col">Balance Native</th>
           <th scope="col">Balance USD</th>
-          <th scope="col">Available</th>
+          <th scope="col">Available Native</th>
         </tr>
       </thead>
       <tbody>
-        {% for account in accounts|sort(reverse=True, attribute="balance_usd")
-        %}
+        {% for account in user.accounts|sort(reverse=True,
+        attribute="balance_usd") %}
         <tr class="portfolio-table-row" id="{{account.currency}}">
           <td class="align-middle">
             <img
@@ -85,7 +85,6 @@
             {{account.available | float | round(2) }}
           </td>
         </tr>
-
         {% endfor %}
       </tbody>
     </table>

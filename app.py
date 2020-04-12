@@ -158,12 +158,10 @@ def dashboard(user_id):
     update_user_info(user_id)
 
     user = User.query.get_or_404(user_id)
-    accounts = user.accounts
+
     total_balance = total_balance_usd(user_id)
 
-    portfolio = portfolio_pct_allocations(user_id)
-
-    return render_template("users/dashboard.html", user=user, accounts=accounts, total_balance=total_balance, portfolio=portfolio)
+    return render_template("users/dashboard.html", user=user, total_balance=total_balance)
 
 
 @app.route('/users/<int:user_id>/rebalance', methods=["GET", "POST"])
@@ -193,38 +191,30 @@ def rebalance(user_id):
 
     if request.method == "POST":
 
-        updated_portfolio = []
+        target_portfolio = []
 
         for item in form.portfolio.data[:len(assets)]:
 
             currency = item["currency"]
             percentage = item["percentage"] / 100
 
-            updated_portfolio.append(
+            target_portfolio.append(
                 {"currency": currency, "percentage": percentage})
 
         # portfolio allocations should equal 100%
         is_valid_portfolio = sum(
-            [item["percentage"] for item in updated_portfolio]) == 1.0
+            [item["percentage"] for item in target_portfolio]) == 1.0
 
         if not is_valid_portfolio:
             flash('Allocations should add up to 100%', 'danger')
             return redirect(url_for('rebalance', user_id=user_id))
 
-        # add target allocations to db
-        updated_targets = []
-
-        for asset in updated_portfolio:
-            target = TargetAllocation(
-                currency=asset["currency"], percentage=asset["percentage"], user_id=user_id)
-            updated_targets.append(target)
-
-        db.session.add_all(updated_targets)
-        db.session.commit()
+        # udpate the target allocations in the db
+        update_target_allocations(user_id, auth, target_portfolio)
 
         flash('Rebalance Initiated', 'success')
 
-        return redirect(url_for('rebalance', user_id=user_id))
+        return redirect(url_for('dashboard', user_id=user_id))
 
     return render_template('/users/rebalance.html', form=form, assets=assets)
 
