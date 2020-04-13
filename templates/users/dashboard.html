@@ -27,13 +27,12 @@
   </div>
   <div class="col" id="portfolio-table-wrapper">
     <table class="table table-hover mt-3" id="portfolio-table">
-      <thead class="thead-light">
+      <thead>
         <tr>
           <th scope="col"></th>
           <th scope="col">Asset</th>
           <th scope="col">Balance Native</th>
           <th scope="col">Balance USD</th>
-          <th scope="col">Available Native</th>
         </tr>
       </thead>
       <tbody>
@@ -51,17 +50,18 @@
             <span>{{account.currency}}</span>
           </td>
           <td class="align-middle">
-            {{account.balance_native | float | round(2)}}
+            {{"{:,.2f}".format(account.balance_native | float | round(2))}}
           </td>
-          <td class="align-middle">{{"$%.2f"|format(account.balance_usd) }}</td>
           <td class="align-middle">
-            {{account.available | float | round(2) }}
+            {{"${:,.2f}".format(account.balance_usd) }}
           </td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
-    <h6>Total Balance in USD: {{"$%.2f"|format(total_balance)}}</h6>
+    <div id="pie-chart-total-balance">
+      Total Balance USD: {{"${:,.2f}".format(total_balance)}}
+    </div>
   </div>
 </div>
 {% endblock %}

@@ -2,6 +2,7 @@
 
 body {
   background-color: #ffffff;
+  font-family: "IBM Plex Mono", monospace;
 }
 
 body.error-404 {
@@ -15,6 +16,16 @@ body.error-404 {
 .table th,
 td {
   text-align: center;
+}
+
+thead {
+  background-color: rgb(232, 231, 253);
+  color: #0f064b;
+}
+
+.table-hover tbody tr:hover td,
+.table-hover tbody tr:hover th {
+  background-color: rgb(232, 231, 253);
 }
 
 .form-control {
@@ -33,21 +44,32 @@ td {
 .btn {
   border-radius: 2px;
   background-color: rgb(243, 243, 254);
-  border-color: #1c115f;
-  color: #1c115f;
+  border-color: #0f064b;
+  color: #0f064b;
+}
+.btn:disabled {
+  border-radius: 2px;
+  background-color: rgb(243, 243, 254);
+  border-color: rgb(232, 231, 253);
+  color: rgb(232, 231, 253);
+}
+
+.btn:disabled:hover {
+  background-color: rgb(243, 243, 254);
+  color: rgb(232, 231, 253);
 }
 
 .btn:hover {
   cursor: pointer;
-  background-color: #a1e9b9;
-  color: #1c115f;
+  background-color: rgb(114, 124, 255);
+  color: #ffffff;
 }
 
 /* ======================= Nav */
 
 .navbar {
-  background-color: #1c115f;
-  height: 50px;
+  background-color: #0f064b;
+  height: 60px;
   margin-bottom: 1rem;
   position: relative;
   z-index: 9999;
@@ -57,10 +79,11 @@ td {
   color: #ffffff;
   font-size: 16px;
   font-weight: bold;
+  margin: 0rem 0.5rem 0rem 0.5rem;
 }
 
 .navbar a:hover {
-  color: #a1e9b9;
+  color: rgb(16, 186, 151);
   text-decoration: none;
 }
 
@@ -162,6 +185,16 @@ nav + .container {
   margin-top: 3rem;
 }
 
+#pie-chart-total-balance {
+  text-transform: uppercase;
+  color: #0f064b;
+  margin: auto;
+  padding: 1rem 1rem 1rem 1rem;
+  font-weight: bold;
+  background-color: rgb(243, 243, 254);
+  text-align: center;
+}
+
 .portfolio-card {
   margin-right: 5rem;
   border-style: solid;
@@ -192,6 +225,10 @@ nav + .container {
   margin: 0.5rem;
 }
 
+#portfolio-pct-total {
+  color: rgb(16, 186, 151);
+}
+
 .fas.fa-caret-up,
 .fas.fa-caret-down {
   font-size: 1.3rem;
@@ -199,13 +236,13 @@ nav + .container {
 }
 
 .fas.fa-caret-up {
-  color: #1c115f;
+  color: #0f064b;
 }
 
 .fas.fa-caret-down {
-  color: #a1e9b9;
+  color: rgb(16, 186, 151);
 }
 
 .invalid-sum {
-  color: red;
+  color: rgb(185, 52, 52);
 }

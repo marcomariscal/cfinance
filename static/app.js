@@ -52,7 +52,9 @@ $(function () {
       tooltips: {
         backgroundColor: "rgba(0,0,0,1.0)",
         bodyFontColor: "rgba(255,255,255,1.0)",
+        bodyFontFamily: "IBM Plex Mono",
       },
+      cutoutPercentage: 70,
     };
 
     const pieData = {
@@ -74,22 +76,22 @@ $(function () {
       portfolioPctSum += parseInt(element.value);
     });
 
+    // ensure all inputs exists
+    isNaN(portfolioPctSum)
+      ? $portfolioPctTotal.html("<p class='invalid-sum'>Updating...<p>")
+      : $portfolioPctTotal.html(
+          $(`<p>Target Allocation Total: ${portfolioPctSum}%</p>`)
+        );
+
     // adjust class to highlight in red if inputs don't add up to 100%
     portfolioPctSum !== 100
-      ? $portfolioPctTotal.addClass("invalid-sum alert alert-warning")
-      : $portfolioPctTotal.removeClass("invalid-sum alert alert-warning");
+      ? $portfolioPctTotal.children().addClass("invalid-sum")
+      : $portfolioPctTotal.children().removeClass("invalid-sum");
 
     // disable rebalance button if inputs don't add up to 100%
     portfolioPctSum !== 100
       ? $rebalanceSubmit.prop("disabled", true)
       : $rebalanceSubmit.prop("disabled", false);
-
-    // ensure all inputs exists
-    isNaN(portfolioPctSum)
-      ? $portfolioPctTotal.html("Updating...")
-      : $portfolioPctTotal.html(
-          $(`<p>Current Allocation Total: ${portfolioPctSum}%</p>`)
-        );
   }
 
   function handleArrowClick() {
