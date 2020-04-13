@@ -120,16 +120,15 @@ def update_target_allocations(user_id, target_portfolio):
         db.session.commit()
 
     # create allocations for db if there are no current allocations
-    else:
-        targets = []
+    targets = []
 
-        for asset in target_portfolio:
-            allocation = TargetAllocation(
-                currency=asset["currency"], percentage=asset["percentage"], user_id=user_id)
-            targets.append(allocation)
+    for asset in target_portfolio:
+        allocation = TargetAllocation(
+            currency=asset["currency"], percentage=asset["percentage"], user_id=user_id)
+        targets.append(allocation)
 
-        db.session.add_all(targets)
-        db.session.commit()
+    db.session.add_all(targets)
+    db.session.commit()
 
 
 def handle_deposit(user_id, auth, amount, currency, payment_method_id):
@@ -258,10 +257,16 @@ def rebalance_portfolio(user_id, auth):
 
     # the tickers we need to use for each currency to transact/place orders
     df["Ticker"] = df["Currency"].map(lambda x: find_ticker(x))
+    df["Ticker"] = np.where(df["Currency"] == 'USD', 'USD', df["Ticker"])
+    df["Ticker"] = np.where(df["Currency"] == 'USDC', 'USDC', df["Ticker"])
 
     quote_currencies = df["Ticker"].str.split(pat='-', expand=True)
 
     df["Quote Currency"] = quote_currencies[1]
+    df["Quote Currency"] = np.where(
+        df["Ticker"] == 'USD', 'USDC', df["Quote Currency"])
+    df["Quote Currency"] = np.where(
+        df["Ticker"] == 'USDC', 'USD', df["Quote Currency"])
 
     df["Price in Quote"] = df.apply(lambda x: convert_currency(
         x["Currency"], 1, x["Quote Currency"]), axis=1)
@@ -295,88 +300,98 @@ def rebalance_portfolio(user_id, auth):
     df["Delta Ticker Amount"] = df["Delta Ticker Amount"].map(
         lambda x: round(x, 2))
 
-    df["Weight"] = np.where(df["Delta Ticker Amount"] >
-                            0, 'underweight', 'overweight')
+    df["% Delta"] = abs(df['Total USD Value Delta'] / df['Total USD Value'])
 
-    df["Side"] = np.where(df["Weight"] == 'overweight', 'sell', 'buy')
+    df["Weight"] = np.where(df["Delta Quote Amount"] >
+                            0, 'underweight', 'overweight')
 
     df["Amount Available to Trade"] = df["Quote Currency"].map(lambda x: [
         account.balance_native for account in user.accounts if account.currency == x])
 
     # create a df for placing orders
     order_df = df[['Currency', 'Ticker', 'Delta Quote Amount',
-                   'Weight', 'Side', 'Amount Available to Trade', 'Total Ticker Value', 'Balance Native']]
+                   'Weight', 'Amount Available to Trade', 'Total Ticker Value', 'Balance Native']]
 
-    for index, row in order_df.iterrows():
+    # keeping updating and transacting as long as the delta between actual and target for any asset value is greater than threshold
+    if (df["% Delta"] >= .01).any():
 
-        currency = row["Currency"]
-        ticker = row["Ticker"]
-        weight = row["Weight"]
-        side = row["Side"]
-        delta = round(row["Delta Quote Amount"], 2)
-        delta = abs(delta)
-        current_ticker_val = row["Total Ticker Value"]
-        amount_avail_to_trade = round(row["Amount Available to Trade"][0], 2) if len(
-            row["Amount Available to Trade"]) != 0 else row["Balance Native"]
+        for index, row in order_df.iterrows():
 
-        print("###################")
-        print("currency:", currency, "current val:", current_ticker_val,
-              'amount:', amount_avail_to_trade, 'delta:', delta, 'weight:', weight)
-
-        # # is the delta between our current and target too large, if yes then we continue placing trades
-        # if delta > .01:
-        # check for overweight currencies first and sell them at the delta amount
-        if weight == 'overweight' and currency not in ['USD', 'USDC']:
-
-            order = place_order(user_id, auth, 'sell', delta, ticker)
-
-            # if 'funds is too large' in order["message"]:
-            #     order = place_order(
-            #         user_id, auth, 'sell', delta / 2, ticker)
+            currency = row["Currency"]
+            ticker = row["Ticker"]
+            weight = row["Weight"]
+            delta = round(row["Delta Quote Amount"], 2)
+            delta = abs(delta)
+            current_ticker_val = row["Total Ticker Value"]
+            amount_avail_to_trade = round(row["Amount Available to Trade"][0], 2) if len(
+                row["Amount Available to Trade"]) != 0 else row["Balance Native"]
 
             print("###################")
-            print(order)
-            # move on to next currency
-            continue
+            print("currency:", currency, "current val:", current_ticker_val,
+                  'amount:', amount_avail_to_trade, 'delta:', delta, 'weight:', weight)
 
-        # check for underweight currencies and check if there is amount available to trade
-        if weight == 'underweight' and 0 < delta < amount_avail_to_trade:
-            order = place_order(user_id, auth, 'buy',
-                                delta, ticker)
-            print("###################")
-            print(order)
-            # move on to next currency
-            continue
+            # # is the delta between our current and target too large, if yes then we continue placing trades
+            if delta > .01:
+                # check for overweight currencies first and sell them at the delta amount
+                if weight == 'overweight' and currency not in ['USD', 'USDC']:
 
-        # check if we are currently at USDC and USDC is underweight, if so, convert USD to USDC
-        if currency == 'USD' and weight == 'overweight':
-            conversion = stablecoin_conversion(auth, 'USD', 'USDC', delta)
-            print("###################")
-            print(conversion)
+                    order = place_order(user_id, auth, 'sell', delta, ticker)
 
-        # check if we are currently at USDC and USDC is underweight, if so, convert USD to USDC
-        if currency == 'USDC' and weight == 'overweight':
-            conversion = stablecoin_conversion(auth, 'USDC', 'USD', delta)
-            print("###################")
-            print(conversion)
+                    # if 'funds is too large' in order["message"]:
+                    #     order = place_order(
+                    #         user_id, auth, 'sell', delta / 2, ticker)
 
-        if currency == 'USD' and weight == 'underweight':
-            conversion = stablecoin_conversion(auth, 'USDC', 'USD', delta)
-            print("###################")
-            print(conversion)
+                    print(order)
+                    print("###################")
 
-        if currency == 'USDC' and weight == 'underweight':
-            conversion = stablecoin_conversion(auth, 'USD', 'USDC', delta)
-            print("###################")
-            print(conversion)
-        #  # check if we are currently at USDC and USDC is underweight, if so, convert USD to USDC
-        # if currency == 'USDC' and weight == 'overweight':
-        #     conversion = stablecoin_conversion(auth, 'USDC', 'USD', delta)
-        #     print("###################")
-        #     print(conversion)
+                # check for underweight currencies and check if there is amount available to trade
+                if weight == 'underweight' and delta <= amount_avail_to_trade:
+                    order = place_order(user_id, auth, 'buy',
+                                        delta, ticker)
 
-    update_user_accounts(user_id, auth)
-    update_allocations(user_id)
+                    print(order)
+                    print("###################")
+
+                elif delta > amount_avail_to_trade:
+                    order = place_order(user_id, auth, 'buy',
+                                        amount_avail_to_trade, ticker)
+                    print(order)
+                    print("###################")
+
+                # check if we are currently at USD and USD is overweight, if so, convert USD to USDC
+                if currency == 'USD' and weight == 'overweight':
+                    conversion = stablecoin_conversion(
+                        auth, 'USD', 'USDC', delta)
+                    print(conversion)
+                    print("###################")
+
+                    # break out of this iteration to check deltas
+                    break
+
+                # check if we are currently at USDC and USDC is underweight, if so, convert USD to USDC
+                if currency == 'USDC' and weight == 'overweight':
+                    conversion = stablecoin_conversion(
+                        auth, 'USDC', 'USD', delta)
+                    print(conversion)
+                    print("###################")
+
+                    # break out of this iteration to check deltas
+                    break
+
+                # # if currency == 'USD' and weight == 'underweight':
+                #     conversion = stablecoin_conversion(
+                #         auth, 'USDC', 'USD', amount_avail_to_trade)
+                #     print(conversion)
+                #     print("###################")
+
+                # if currency == 'USDC' and weight == 'underweight':
+                #     conversion = stablecoin_conversion(
+                #         auth, 'USD', 'USDC', amount_avail_to_trade)
+                #     print(conversion)
+                #     print("###################")
+
+        # rerun the rebalance
+        rebalance_portfolio(user_id, auth)
 
 
 def find_ticker(curr):
@@ -471,3 +486,11 @@ def convert_currency(from_currency, amount, to_currency='usd'):
         converted_amount = float(price) * float(amount)
 
     return converted_amount
+
+
+def invalid_order(order):
+
+    if 'funds is too small' or 'Prodct not found' or 'funds is too large' in order["message"]:
+        return True
+
+    return False

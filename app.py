@@ -209,10 +209,12 @@ def rebalance(user_id):
             flash('Allocations should add up to 100%', 'danger')
             return redirect(url_for('rebalance', user_id=user_id))
 
-        # udpate the target allocations in the db
-        update_target_allocations(user_id, auth, target_portfolio)
-
         flash('Rebalance Initiated', 'success')
+        # udpate the target allocations in the db
+        update_target_allocations(user_id, target_portfolio)
+
+        # now rebalance portfolio according to those new targets
+        rebalance_portfolio(user_id, auth)
 
         return redirect(url_for('dashboard', user_id=user_id))
 

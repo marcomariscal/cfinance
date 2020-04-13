@@ -1,4 +1,4 @@
-$(function() {
+$(function () {
   const $portfolioTableRow = $(".portfolio-table-row");
   const $currencyInfo = $(".currency-info");
   const $portfolioPieChart = $("#portfolio-pie-chart");
@@ -7,7 +7,7 @@ $(function() {
   const $arrows = $(".fas.fa-caret-up, .fas.fa-caret-down");
   const $rebalanceSubmit = $("#rebalance-submit");
 
-  $portfolioTableRow.on("click", function() {
+  $portfolioTableRow.on("click", function () {
     const id = $(this).attr("id");
     window.location = `/currencies/${id}`;
   });
@@ -33,7 +33,7 @@ $(function() {
           "rgba(255, 206, 86, 0.8)",
           "rgba(75, 192, 192, 0.8)",
           "rgba(153, 102, 255, 0.8)",
-          "rgba(45, 102, 255, 0.8)"
+          "rgba(45, 102, 255, 0.8)",
         ],
         borderColor: [
           "rgba(255, 99, 132, 0.8)",
@@ -41,30 +41,30 @@ $(function() {
           "rgba(255, 206, 86, 0.8)",
           "rgba(75, 192, 192, 0.8)",
           "rgba(153, 102, 255, 0.8)",
-          "rgba(45, 102, 255, 0.8)"
+          "rgba(45, 102, 255, 0.8)",
         ],
-        borderWidth: 1
-      }
+        borderWidth: 1,
+      },
     ];
 
     const options = {
       legend: false,
       tooltips: {
         backgroundColor: "rgba(0,0,0,1.0)",
-        bodyFontColor: "rgba(255,255,255,1.0)"
-      }
+        bodyFontColor: "rgba(255,255,255,1.0)",
+      },
     };
 
     const pieData = {
       labels: labels,
-      datasets: datasets
+      datasets: datasets,
     };
 
     let ctx = $portfolioPieChart;
     let myPieChart = new Chart(ctx, {
       type: "doughnut",
       data: pieData,
-      options: options
+      options: options,
     });
   })();
 
@@ -79,20 +79,22 @@ $(function() {
       ? $portfolioPctTotal.addClass("invalid-sum alert alert-warning")
       : $portfolioPctTotal.removeClass("invalid-sum alert alert-warning");
 
+    // disable rebalance button if inputs don't add up to 100%
+    portfolioPctSum !== 100
+      ? $rebalanceSubmit.prop("disabled", true)
+      : $rebalanceSubmit.prop("disabled", false);
+
     // ensure all inputs exists
     isNaN(portfolioPctSum)
       ? $portfolioPctTotal.html("Updating...")
       : $portfolioPctTotal.html(
-          $(`<p>Current Allocation Total: ${portfolioPctSum}</p>%`)
+          $(`<p>Current Allocation Total: ${portfolioPctSum}%</p>`)
         );
   }
 
   function handleArrowClick() {
     const $arrow = $(this);
-    let $pctInput = $(this)
-      .parent()
-      .parent()
-      .siblings()[3].children[0];
+    let $pctInput = $(this).parent().parent().siblings()[3].children[0];
 
     let pctInputVal = $pctInput.value;
 
