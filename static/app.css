@@ -47,22 +47,28 @@ thead {
   border-color: #0f064b;
   color: #0f064b;
 }
+
 .btn:disabled {
   border-radius: 2px;
   background-color: rgb(243, 243, 254);
   border-color: rgb(232, 231, 253);
-  color: rgb(232, 231, 253);
+  color: rgb(127, 126, 160);
 }
 
 .btn:disabled:hover {
   background-color: rgb(243, 243, 254);
-  color: rgb(232, 231, 253);
+  color: rgb(127, 126, 160);
 }
 
 .btn:hover {
   cursor: pointer;
   background-color: rgb(114, 124, 255);
   color: #ffffff;
+}
+
+.btn:focus,
+.btn:active {
+  box-shadow: none;
 }
 
 /* ======================= Nav */

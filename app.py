@@ -214,7 +214,7 @@ def rebalance(user_id):
         update_target_allocations(user_id, target_portfolio)
 
         # now rebalance portfolio according to those new targets
-        rebalance_portfolio(user_id, auth)
+        rebalance_portfolio(user_id, auth, 0)
 
         return redirect(url_for('dashboard', user_id=user_id))
 
@@ -233,7 +233,8 @@ def trade(user_id):
 
     valid_products = get_valid_products_for_orders(user.accounts)
     form = OrderForm()
-    form.product_id.choices = [(prod, prod) for prod in valid_products]
+    form.product_id.choices = [
+        (prod, f"To {prod.split('-')[0]} from {prod.split('-')[1]}") for prod in valid_products]
 
     if form.validate_on_submit():
 

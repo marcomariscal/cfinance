@@ -7,6 +7,7 @@ $(function () {
   const $arrows = $(".fas.fa-caret-up, .fas.fa-caret-down");
   const $rebalanceSubmit = $("#rebalance-submit");
 
+  // change to currency specific route when clicking on portfolio dashboard table row
   $portfolioTableRow.on("click", function () {
     const id = $(this).attr("id");
     window.location = `/currencies/${id}`;
@@ -109,4 +110,14 @@ $(function () {
 
   $arrows.on("click", handleArrowClick);
   $portfolioPctInputs.on("input", handlePctInputChange);
+
+  // show loading when rebalance is initiated
+  $rebalanceSubmit.on("click", function (e) {
+    e.preventDefault();
+    $(this).prop("disabled", true);
+    // add spinner to rebalance button
+    $(this).html(
+      '<span class="spinner-border mr-2" role="status" aria-hidden="true"></span>Rebalancing...'
+    );
+  });
 });

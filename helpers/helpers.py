@@ -226,7 +226,7 @@ def get_valid_products_for_orders(accounts):
     return valid_prods
 
 
-def rebalance_portfolio(user_id, auth):
+def rebalance_portfolio(user_id, auth, count):
     """Rebalance a portfolio to the given allocation percentages.
     (i.e.: a portfolio composed of 50% BTC and 50% ETH will be bought according to those percentages, based on how the
     portfolio is currently allocated)
@@ -312,8 +312,10 @@ def rebalance_portfolio(user_id, auth):
     order_df = df[['Currency', 'Ticker', 'Delta Quote Amount',
                    'Weight', 'Amount Available to Trade', 'Total Ticker Value', 'Balance Native']]
 
-    # keeping updating and transacting as long as the delta between actual and target for any asset value is greater than threshold
-    if (df["% Delta"] >= .01).any():
+    # keeping updating and transacting as long as the delta between actual and target for any asset value is greater than threshold of 1%
+    # don't make more than 20 iterations of rebalancing
+
+    if (df["% Delta"] >= .01).any() and count <= 20:
 
         for index, row in order_df.iterrows():
 
@@ -326,7 +328,7 @@ def rebalance_portfolio(user_id, auth):
             amount_avail_to_trade = round(row["Amount Available to Trade"][0], 2) if len(
                 row["Amount Available to Trade"]) != 0 else row["Balance Native"]
 
-            print("###################")
+            print("##################################################################")
             print("currency:", currency, "current val:", current_ticker_val,
                   'amount:', amount_avail_to_trade, 'delta:', delta, 'weight:', weight)
 
@@ -342,7 +344,8 @@ def rebalance_portfolio(user_id, auth):
                     #         user_id, auth, 'sell', delta / 2, ticker)
 
                     print(order)
-                    print("###################")
+                    print(
+                        "##################################################################")
 
                 # check for underweight currencies and check if there is amount available to trade
                 if weight == 'underweight' and delta <= amount_avail_to_trade:
@@ -350,20 +353,23 @@ def rebalance_portfolio(user_id, auth):
                                         delta, ticker)
 
                     print(order)
-                    print("###################")
+                    print(
+                        "##################################################################")
 
                 elif delta > amount_avail_to_trade:
                     order = place_order(user_id, auth, 'buy',
                                         amount_avail_to_trade, ticker)
                     print(order)
-                    print("###################")
+                    print(
+                        "##################################################################")
 
                 # check if we are currently at USD and USD is overweight, if so, convert USD to USDC
                 if currency == 'USD' and weight == 'overweight':
                     conversion = stablecoin_conversion(
                         auth, 'USD', 'USDC', delta)
                     print(conversion)
-                    print("###################")
+                    print(
+                        "##################################################################")
 
                     # break out of this iteration to check deltas
                     break
@@ -373,25 +379,15 @@ def rebalance_portfolio(user_id, auth):
                     conversion = stablecoin_conversion(
                         auth, 'USDC', 'USD', delta)
                     print(conversion)
-                    print("###################")
+                    print(
+                        "##################################################################")
 
                     # break out of this iteration to check deltas
                     break
 
-                # # if currency == 'USD' and weight == 'underweight':
-                #     conversion = stablecoin_conversion(
-                #         auth, 'USDC', 'USD', amount_avail_to_trade)
-                #     print(conversion)
-                #     print("###################")
-
-                # if currency == 'USDC' and weight == 'underweight':
-                #     conversion = stablecoin_conversion(
-                #         auth, 'USD', 'USDC', amount_avail_to_trade)
-                #     print(conversion)
-                #     print("###################")
-
         # rerun the rebalance
-        rebalance_portfolio(user_id, auth)
+        count += 1
+        return rebalance_portfolio(user_id, auth, count)
 
 
 def find_ticker(curr):
