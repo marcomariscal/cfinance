@@ -315,7 +315,7 @@ def rebalance_portfolio(user_id, auth, count):
     # keeping updating and transacting as long as the delta between actual and target for any asset value is greater than threshold of 1%
     # don't make more than 20 iterations of rebalancing
 
-    if (df["% Delta"] >= .01).any() and count <= 20:
+    if (df["% Delta"] >= .01).any() and count <= 30:
 
         for index, row in order_df.iterrows():
 
@@ -484,9 +484,18 @@ def convert_currency(from_currency, amount, to_currency='usd'):
     return converted_amount
 
 
-def invalid_order(order):
+def validate_order(order):
 
-    if 'funds is too small' or 'Prodct not found' or 'funds is too large' in order["message"]:
-        return True
+    if order.get("message"):
+        message = 'Invalid Order'
+        alert = 'danger'
 
-    return False
+    elif order.get('id'):
+        message = 'Your order was placed'
+        alert = 'success'
+
+    else:
+        message = 'Invalid Order'
+        alert = 'danger'
+
+    return message, alert

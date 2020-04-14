@@ -95,6 +95,7 @@ def signup():
             if user:
                 db.session.commit()
                 do_login(user)
+                flash('Welcome!')
                 return redirect(url_for('dashboard', user_id=user.id))
             else:
                 flash('Unable to authorize access to Coinbase Pro', 'danger')
@@ -209,7 +210,7 @@ def rebalance(user_id):
             flash('Allocations should add up to 100%', 'danger')
             return redirect(url_for('rebalance', user_id=user_id))
 
-        flash('Rebalance Initiated', 'success')
+        flash('Rebalance complete', 'success')
         # udpate the target allocations in the db
         update_target_allocations(user_id, target_portfolio)
 
@@ -248,7 +249,8 @@ def trade(user_id):
         data = place_order(user_id, auth, side, funds, product_id)
 
         if data:
-            flash('Your order was placed', 'success')
+            order_message, order_alert = validate_order(data)
+            flash(f'{order_message}', order_alert)
             return redirect(url_for('trade', user_id=user_id))
 
     return render_template('users/trade.html', form=form)

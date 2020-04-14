@@ -23,6 +23,10 @@ thead {
   color: #0f064b;
 }
 
+a:hover {
+  text-decoration: none;
+}
+
 .table-hover tbody tr:hover td,
 .table-hover tbody tr:hover th {
   background-color: rgb(232, 231, 253);
@@ -71,6 +75,13 @@ thead {
   box-shadow: none;
 }
 
+/* ======================= Home */
+
+.home-button {
+  margin-top: 1rem;
+  width: 10rem;
+}
+
 /* ======================= Nav */
 
 .navbar {
@@ -90,7 +101,6 @@ thead {
 
 .navbar a:hover {
   color: rgb(16, 186, 151);
-  text-decoration: none;
 }
 
 .navbar-brand {

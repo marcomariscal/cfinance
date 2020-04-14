@@ -3,7 +3,11 @@
 <div class="row justify-content-md-center">
   <div class="rebalance-wrapper">
     <div class="form-wrapper">
-      <form method="POST" id="rebalance-form">
+      <form
+        action="/users/{{g.user.id}}/rebalance"
+        method="POST"
+        id="rebalance-form"
+      >
         <table class="table table-hover mt-3">
           <thead>
             <tr>
@@ -44,7 +48,11 @@
           </tbody>
         </table>
         <div id="portfolio-pct-total"></div>
-        <button class="btn btn-primary btn-lg btn-block" id="rebalance-submit">
+        <button
+          type="submit"
+          class="btn btn-primary btn-lg btn-block"
+          id="rebalance-submit"
+        >
           Rebalance
         </button>
       </form>
