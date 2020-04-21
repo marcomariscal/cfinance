@@ -42,6 +42,7 @@ class User(db.Model):
     current_allocations = db.relationship('CurrentAllocation',
                                           backref='user')
 
+    # try to initialize the user with an attribute holding the coinbase pro authentication
     def __init__(self, api_key, api_secret, api_passphrase):
         self.api_key = api_key
         self.api_secret = api_secret

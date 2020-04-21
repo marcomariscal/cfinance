@@ -43,9 +43,7 @@ def add_to_g():
 
         g.user = User.query.get(session[CURR_USER_KEY])
 
-        # g.auth = g.user.cb_auth(os.getenv("CBP_API_KEY"), os.getenv(
-        #     "CBP_API_SECRET"), os.getenv("CBP_API_PASSPHRASE"))
-
+        # trying to use the auth attribute on the user instance, but doesn't work
         g.auth = g.user.auth
 
     else:
