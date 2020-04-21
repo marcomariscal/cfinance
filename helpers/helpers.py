@@ -1,13 +1,13 @@
 from models import db, Account, PaymentMethod, User, CurrentAllocation, TargetAllocation
+from flask import g
 import requests
 import os
-from instance.config import CMC_PRO_API_KEY
 import simplejson as json
 import pandas as pd
 import numpy as np
 
 
-API_URL = "https://api-public.sandbox.pro.coinbase.com/"
+# CB_API_URL = "https://api-public.sandbox.pro.coinbase.com/"
 COINGECKO_API_URL = 'https://api.coingecko.com/api/v3/'
 
 # used for converting currencies from native to USD
@@ -15,7 +15,8 @@ USD_REFERENCE = 'usd'
 
 
 def update_user_accounts(user_id, auth):
-    response = requests.get(API_URL + 'accounts', auth=auth)
+
+    response = requests.get(g.api_url + 'accounts', auth=auth)
     accounts = response.json()
 
     for account in accounts:
@@ -27,6 +28,8 @@ def update_user_accounts(user_id, auth):
         hold = account["hold"]
 
         # don't include LINK becuase you can't transact with it in the sandbox
+        accounts_to_add = []
+
         if currency not in ['LINK', 'EUR', 'GBP']:
             try:
                 balance_usd = convert_currency(
@@ -35,31 +38,32 @@ def update_user_accounts(user_id, auth):
                 account_in_db = Account.query.get(id)
 
                 if account_in_db:
+
                     account_in_db.currency = currency
                     account_in_db.balance_native = balance_native
                     account_in_db.balance_usd = balance_usd
                     account_in_db.available = available
                     account_in_db.hold = hold
 
-                    db.session.add(account_in_db)
-
                 else:
+
                     account = Account(id=id, currency=currency,
                                       balance_native=balance_native,
                                       balance_usd=balance_usd,
                                       available=available, hold=hold, user_id=user_id)
 
-                    db.session.add(account)
+                    accounts_to_add.append(account)
             except KeyError:
                 pass
 
+        db.session.add_all(accounts_to_add)
         db.session.commit()
 
 
 def update_payment_methods(user_id, currency, auth):
     """Get payment methods from Coinbase Pro user for a specified currency."""
 
-    response = requests.get(API_URL + "payment-methods", auth=auth)
+    response = requests.get(g.api_url + "payment-methods", auth=auth)
     data = response.json()
 
     for method in data:
@@ -83,28 +87,24 @@ def update_payment_methods(user_id, currency, auth):
 
 def update_allocations(user_id):
     """Update the user's portfolio of assets in the db with what is in CBP."""
-    assets = portfolio_pct_allocations(user_id)
 
+    assets = portfolio_pct_allocations(user_id)
     user = User.query.get_or_404(user_id)
-    allocations = user.current_allocations
 
     # delete all rows in model so we can sync the most up to date allocations in CBP
-    if len(allocations) > 0:
-
-        db.session.query(CurrentAllocation).delete()
-        db.session.commit()
+    db.session.query(CurrentAllocation).delete()
+    db.session.commit()
 
     # create allocations for db if there are no current allocations
-    else:
-        allocations = []
+    allocations = []
 
-        for asset, pct in assets.items():
-            allocation = CurrentAllocation(
-                currency=asset, percentage=pct, user_id=user_id)
-            allocations.append(allocation)
+    for asset, pct in assets.items():
+        allocation = CurrentAllocation(
+            currency=asset, percentage=pct, user_id=user_id)
+        allocations.append(allocation)
 
-        db.session.add_all(allocations)
-        db.session.commit()
+    db.session.add_all(allocations)
+    db.session.commit()
 
 
 def update_target_allocations(user_id, target_portfolio):
@@ -141,7 +141,7 @@ def handle_deposit(user_id, auth, amount, currency, payment_method_id):
     }
 
     response = requests.post(
-        API_URL + 'deposits/payment-method', data=json.dumps(params), auth=auth)
+        g.api_url + 'deposits/payment-method', data=json.dumps(params), auth=auth)
 
     data = response.json()
 
@@ -150,13 +150,12 @@ def handle_deposit(user_id, auth, amount, currency, payment_method_id):
 
 def get_currencies():
     """Get currencies from Coinbase API."""
-    response = requests.get(API_URL + "currencies")
+    response = requests.get(g.api_url + "currencies")
     json = response.json()
     return json
 
 
-def total_balance_usd(user_id):
-    user = User.query.get(user_id)
+def total_balance_usd(user):
     accounts = user.accounts
     total_usd_balance = sum([account.balance_usd for account in accounts])
 
@@ -164,10 +163,12 @@ def total_balance_usd(user_id):
 
 
 def portfolio_pct_allocations(user_id):
+    """Get the percentage of total balance for each asset in the user's accounts."""
+
     user = User.query.get(user_id)
     accounts = user.accounts
 
-    total = total_balance_usd(user_id)
+    total = total_balance_usd(user)
 
     pct_allocations = {
         account.currency: account.balance_usd / total for account in accounts}
@@ -176,35 +177,40 @@ def portfolio_pct_allocations(user_id):
 
 
 def place_order(user_id, auth, side, funds, product_id):
+    """Place an order on the Coinbase Pro exchange.
+    Orders are by default market orders."""
+
     params = {'product_id': product_id,
               'side': side,
               'type': 'market',
               'funds': funds}
 
     response = requests.post(
-        API_URL + 'orders', data=json.dumps(params), auth=auth)
+        g.api_url + 'orders', data=json.dumps(params), auth=auth)
 
     data = response.json()
     return data
 
 
 def get_products():
-    """Get available products from Coinbase API."""
-    response = requests.get(API_URL + "products")
+    """Get available products (currencies) from Coinbase API."""
+    response = requests.get(g.api_url + "products")
     data = response.json()
     avail_prods = [prod["id"] for prod in data]
     return avail_prods
 
 
 def get_product(product_id):
-    """Get product (currency) info from Coinbase API."""
-    response = requests.get(API_URL + f"products/{product_id}/ticker")
+    """Get individual product (currency) info from Coinbase API."""
+    response = requests.get(g.api_url + f"products/{product_id}/ticker")
     data = response.json()
     return data
 
 
 def get_current_price(product_id):
-    response = requests.get(API_URL + f"products/{product_id}/ticker")
+    """Get the most recent ticker price from CBP."""
+
+    response = requests.get(g.api_url + f"products/{product_id}/ticker")
     data = response.json()
 
     return data.get('price', 'None')
@@ -236,6 +242,7 @@ def rebalance_portfolio(user_id, auth, count):
         [{"currency": currency, "percentage": percentage}]
 
     """
+
     update_user_accounts(user_id, auth)
     update_allocations(user_id)
 
@@ -412,7 +419,7 @@ def stablecoin_conversion(auth, from_currency, to_currency, amount):
     }
 
     response = requests.post(
-        API_URL + 'conversions', data=json.dumps(params), auth=auth)
+        g.api_url + 'conversions', data=json.dumps(params), auth=auth)
 
     data = response.json()
     return data
@@ -421,70 +428,51 @@ def stablecoin_conversion(auth, from_currency, to_currency, amount):
 def convert_currency(from_currency, amount, to_currency='usd'):
 
     try:
+
+        from_currency = from_currency.lower()
         to_currency = to_currency.lower()
-    except AttributeError as e:
+
+        if from_currency == 'usd' and to_currency == 'usd':
+            return amount
+
+        if from_currency == 'usd':
+            from_curr = 'usd'
+
+        if to_currency == 'usdc':
+            to_curr = 'usdc'
+
+        if to_currency == 'usd':
+            to_curr = 'usd'
+
+        from_curr = get_coingecko_id(from_currency)
+        to_curr = get_coingecko_id(to_currency)
+
+    except (AttributeError, IndexError) as e:
         print(e)
-
-    if from_currency == 'BTC':
-        from_curr = 'bitcoin'
-
-    if from_currency == 'ETH':
-        from_curr = 'ethereum'
-
-    if from_currency == 'BAT':
-        from_curr = 'basic attention token'
-
-    if from_currency == 'BAT':
-        from_curr = 'basic-attention-token'
-
-    if from_currency == 'USDC':
-        return amount
-
-    if from_currency == 'USD':
-        return amount
-
-    # change to currency for compatability
-    if to_currency == 'BTC':
-        to_currency = 'bitcoin'
-
-    if to_currency == 'ETH':
-        to_currency = 'ethereum'
-
-    if to_currency == 'BAT':
-        to_currency = 'basic attention token'
-
-    if to_currency == 'BAT':
-        to_currency = 'basic-attention-token'
-
-    if to_currency == 'USDC' or 'usdc':
-        to_currency = 'usd'
-
-    if to_currency == 'USD':
-        to_currency = 'usd'
 
     params = {
         "ids": from_curr,
-        "vs_currencies": to_currency
+        "vs_currencies": to_curr
     }
 
     headers = {
         'Accepts': 'application/json',
     }
 
-    if from_currency not in ['USDC', 'USD']:
-        response = requests.get(
-            COINGECKO_API_URL + 'simple/price', params=params, headers=headers)
+    response = requests.get(
+        COINGECKO_API_URL + 'simple/price', params=params, headers=headers)
 
-        json = response.json()
-        data = json[from_curr]
-        price = data[to_currency]
+    json = response.json()
+    data = json[from_curr]
+    price = data[to_curr]
 
-        converted_amount = float(price) * float(amount)
+    converted_amount = float(price) * float(amount)
 
     return converted_amount
 
 
 def validate_order(order):
+    """Validate if an order was successfully placed."""
 
     if order.get("message"):
         message = 'Invalid Order'
@@ -499,3 +487,22 @@ def validate_order(order):
         alert = 'danger'
 
     return message, alert
+
+
+def get_coingecko_id(symbol):
+    """Get the currency id in coingecko using the currency symbol (i.e.: "BAT")."""
+
+    try:
+
+        response = requests.get(
+            COINGECKO_API_URL + 'coins/list')
+
+        data = response.json()
+
+        curr_id = [curr["id"] for curr in data if curr["symbol"]
+                   == symbol and curr['id'] != 'batcoin'][0]
+
+        return curr_id
+
+    except UnboundLocalError as e:
+        print(e)

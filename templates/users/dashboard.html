@@ -37,11 +37,13 @@
       </thead>
       <tbody>
         {% for account in user.accounts|sort(reverse=True,
-        attribute="balance_usd") %}
+        attribute="balance_usd") %} {% if account.balance_usd > 0 %}
         <tr class="portfolio-table-row" id="{{account.currency}}">
+          {% set image = account.currency | lower ~ '.svg' %}
           <td class="align-middle">
             <img
-              src="/static/cryptocurrency-icons-master/svg/color/{{account.currency | lower}}.svg"
+              src="/static/cryptocurrency-icons-master/svg/color/{{image}}"
+              onerror="this.onerror=null;this.src='/static/cryptocurrency-icons-master/svg/color/generic.svg';"
               alt="{{account.currency}}"
               class="currency-icon mr-2"
             />
@@ -56,7 +58,7 @@
             {{"${:,.2f}".format(account.balance_usd) }}
           </td>
         </tr>
-        {% endfor %}
+        {% endif %} {% endfor %}
       </tbody>
     </table>
     <div id="pie-chart-total-balance">

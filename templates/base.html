@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <title>CFinance</title>
     <link
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Karla&display=swap"
       rel="stylesheet"
     />
     <link
@@ -23,9 +23,15 @@
     <nav class="navbar navbar-expand">
       <div class="container-fluid">
         <div class="navbar-header">
-          <a href="/users/1/dashboard" class="navbar-brand">
+          {% if g.user %}
+          <a href="/users/{{g.user.id}}/dashboard" class="navbar-brand">
             <span>CFinance</span>
           </a>
+          {% else %}
+          <a href="/" class="navbar-brand">
+            <span>CFinance</span>
+          </a>
+          {% endif %}
         </div>
 
         <ul class="nav navbar-nav navbar-right">

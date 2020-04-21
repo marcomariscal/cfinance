@@ -1,5 +1,6 @@
 from flask_bcrypt import Bcrypt
 from flask_sqlalchemy import SQLAlchemy
+from flask import g
 import json
 import hmac
 import hashlib
@@ -8,8 +9,6 @@ import requests
 import base64
 from requests.auth import AuthBase
 from binascii import Error
-
-API_URL = "https://api-public.sandbox.pro.coinbase.com/"
 
 bcrypt = Bcrypt()
 db = SQLAlchemy()
@@ -43,8 +42,18 @@ class User(db.Model):
     current_allocations = db.relationship('CurrentAllocation',
                                           backref='user')
 
+    def __init__(self, api_key, api_secret, api_passphrase):
+        self.api_key = api_key
+        self.api_secret = api_secret
+        self.api_passphrase = api_passphrase
+
+        self.auth = self.cb_auth(api_key, api_secret, api_passphrase)
+
     def __repr__(self):
         return f"<User #{self.id}: {self.api_key}>"
+
+    def cb_auth(self, api_key, api_secret, api_passphrase):
+        return CoinbaseExchangeAuth(api_key, api_secret, api_passphrase)
 
     @classmethod
     def signup(cls, api_key, api_secret, api_passphrase):
@@ -60,9 +69,9 @@ class User(db.Model):
             api_key, api_secret, api_passphrase)
 
         # test the auth to see if valid user exists in CBP
-        auth = CoinbaseExchangeAuth.test_auth(coinbase_auth)
+        is_auth = CoinbaseExchangeAuth.test_auth(coinbase_auth)
 
-        if auth:
+        if is_auth:
 
             hashed_secret = bcrypt.generate_password_hash(
                 api_secret).decode('UTF-8')
@@ -94,12 +103,14 @@ class User(db.Model):
         user = cls.query.filter_by(api_key=api_key).first()
 
         if user:
+
             is_auth_api_secret = bcrypt.check_password_hash(
                 user.api_secret, api_secret)
             is_auth_api_passphrase = bcrypt.check_password_hash(
                 user.api_passphrase, api_passphrase)
 
             if is_auth_api_secret and is_auth_api_passphrase:
+
                 return user
 
         return False
@@ -226,8 +237,9 @@ class CurrentAllocation(db.Model):
         nullable=False,
     )
 
-
 # Create custom authentication for Exchange
+
+
 class CoinbaseExchangeAuth(AuthBase):
     def __init__(self, api_key, secret_key, passphrase):
         self.api_key = api_key
@@ -255,10 +267,11 @@ class CoinbaseExchangeAuth(AuthBase):
     def test_auth(cls, auth):
         """Test the auth with an API call to validate that a user exists in Coinbase Pro."""
         try:
-            r = requests.get(API_URL + 'accounts', auth=auth)
+            r = requests.get(g.api_url + 'accounts', auth=auth)
             data = r.json()
 
-            if data:
+            # check that the first account has an Id, signifying that it exists
+            if data and r.status_code == 200:
                 return True
 
         except Error:
@@ -268,10 +281,7 @@ class CoinbaseExchangeAuth(AuthBase):
 
 
 def connect_db(app):
-    """Connect this database to provided Flask app.
-
-    You should call this in your Flask app.
-    """
+    """Connect the database to Flask app."""
 
     db.app = app
     db.init_app(app)

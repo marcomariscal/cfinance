@@ -8,16 +8,9 @@ $(function () {
   const $rebalanceSubmit = $("#rebalance-submit");
   const $rebalanceForm = $("#rebalance-form");
 
-  // change to currency specific route when clicking on portfolio dashboard table row
-  $portfolioTableRow.on("click", function () {
-    const id = $(this).attr("id");
-    window.location = `/currencies/${id}`;
-  });
-
   // get pct of portfolio for each currency for pie chart
   async function portfolioAllocationPcts() {
-    const response = await axios.get(`/api/users/1/portfolio_pcts`);
-    const data = response.data;
+    const { data } = await axios.get(`/api/users/portfolio_pcts`);
     return data;
   }
 
@@ -45,18 +38,32 @@ $(function () {
           "rgba(153, 102, 255, 0.8)",
           "rgba(45, 102, 255, 0.8)",
         ],
-        borderWidth: 1,
+        borderWidth: 0,
       },
     ];
 
     const options = {
       legend: false,
       tooltips: {
-        backgroundColor: "rgba(0,0,0,1.0)",
-        bodyFontColor: "rgba(255,255,255,1.0)",
-        bodyFontFamily: "IBM Plex Mono",
+        xPadding: 50,
+        yPadding: 10,
+        mode: "nearest",
+        backgroundColor: "rgba(114, 124, 255, 0.85)",
+        bodyAlign: "center",
+        titleFontSize: 18,
+        titleFontColor: "#fff",
+        titleAlign: "center",
+        bodyFontFamily: "Karla",
+        bodyFontColor: "#fff",
+        bodyFontSize: 18,
+        displayColors: false,
+        cutoutPercentage: 60,
+        callbacks: {
+          title: (item, data) => data["labels"][item[0]["index"]],
+          label: (item, data) =>
+            `${data["datasets"][0]["data"][item["index"]].toFixed(2) * 100}%`,
+        },
       },
-      cutoutPercentage: 70,
     };
 
     const pieData = {
@@ -109,11 +116,12 @@ $(function () {
     $pctInput.value = pctInputVal;
   }
 
+  // handle input changes in rebalance table
   $arrows.on("click", handleArrowClick);
   $portfolioPctInputs.on("input", handlePctInputChange);
 
   // show loading when rebalance is initiated
-  $rebalanceSubmit.on("click", function (e) {
+  $rebalanceSubmit.on("click", (e) => {
     $rebalanceForm.submit();
     e.preventDefault();
     $rebalanceSubmit.prop("disabled", true);

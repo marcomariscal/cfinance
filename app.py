@@ -17,40 +17,52 @@ debug = DebugToolbarExtension(app)
 connect_db(app)
 db.create_all()
 
-API_URL = "https://api-public.sandbox.pro.coinbase.com/"
+CB_DEMO_API_URL = "https://api-public.sandbox.pro.coinbase.com/"
+CB_API_URL = "https://api.pro.coinbase.com/"
 
-API_KEY = app.config["API_KEY"]
-API_SECRET = app.config["API_SECRET"]
-API_PASSPHRASE = app.config["API_PASSPHRASE"]
-
-CMC_PRO_API_KEY = app.config["CMC_PRO_API_KEY"]
-
-
-auth = CoinbaseExchangeAuth(API_KEY, API_SECRET, API_PASSPHRASE)
+DEMO_API_KEY = app.config["DEMO_API_KEY"]
+DEMO_SECRET = app.config["DEMO_SECRET"]
+DEMO_PASSPHRASE = app.config["DEMO_PASSPHRASE"]
 
 CURR_USER_KEY = "curr_user"
+DEMO = 'demo'
 
 ##############################################################################
 # User signup/login/logout
 
 
 @app.before_request
-def add_user_to_g():
-    """If we're logged in, add curr user to Flask global."""
+def add_to_g():
+    """If we're logged in, add curr user to Flask global.
+    Also check if the user has selected demo mode to use the corresponding creds."""
 
-    if CURR_USER_KEY in session:
+    # set default api_url for coinbase pro to real environment
+    g.api_url = CB_API_URL
+
+    if CURR_USER_KEY in session and DEMO not in session:
+
         g.user = User.query.get(session[CURR_USER_KEY])
 
+        # g.auth = g.user.cb_auth(os.getenv("CBP_API_KEY"), os.getenv(
+        #     "CBP_API_SECRET"), os.getenv("CBP_API_PASSPHRASE"))
+
+        g.auth = g.user.auth
+
     else:
+
         g.user = None
 
-        ######################
-        # three different modes: real, sandbox, and demo
-        # use different api urls dependent upon mode
-        # use differenet auth dependent upon mode: if user in sandbox mode, we can provide auth
+    if DEMO in session:
+
+        g.user = User.query.get(session[CURR_USER_KEY])
+
+        g.auth = CoinbaseExchangeAuth(
+            DEMO_API_KEY, DEMO_SECRET, DEMO_PASSPHRASE)
+
+        g.api_url = CB_DEMO_API_URL
 
 
-def update_user_info(user_id):
+def update_user_info(user_id, auth):
     update_user_accounts(user_id, auth)
     update_allocations(user_id)
 
@@ -67,6 +79,35 @@ def do_logout():
     if CURR_USER_KEY in session:
         del session[CURR_USER_KEY]
 
+    if DEMO in session:
+        del session[DEMO]
+
+    g.auth = None
+
+
+@app.route('/demo')
+def initiate_demo():
+
+    g.api_url = CB_DEMO_API_URL
+    session[DEMO] = True
+
+    # authenticate the user if the demo account already exists
+    user = User.authenticate(api_key=DEMO_API_KEY, api_secret=DEMO_SECRET,
+                             api_passphrase=DEMO_PASSPHRASE)
+
+    # create demo user if they don't exist
+    if not user:
+        user = User.signup(api_key=DEMO_API_KEY, api_secret=DEMO_SECRET,
+                           api_passphrase=DEMO_PASSPHRASE)
+    db.session.commit()
+
+    # use Coinbase Pro auth using the demo creds
+    g.auth = CoinbaseExchangeAuth(DEMO_API_KEY, DEMO_SECRET, DEMO_PASSPHRASE)
+
+    do_login(user)
+
+    return redirect(url_for('dashboard', user_id=user.id))
+
 
 @app.route('/signup', methods=["GET", "POST"])
 def signup():
@@ -79,6 +120,7 @@ def signup():
     If the user can't be authed within Coinbase, flash message
     and re-present form.
     """
+
     if CURR_USER_KEY in session:
         del session[CURR_USER_KEY]
 
@@ -94,8 +136,10 @@ def signup():
 
             if user:
                 db.session.commit()
+
                 do_login(user)
-                flash('Welcome!')
+
+                flash('Welcome!', 'success')
                 return redirect(url_for('dashboard', user_id=user.id))
             else:
                 flash('Unable to authorize access to Coinbase Pro', 'danger')
@@ -120,11 +164,14 @@ def login():
     form = LoginForm()
 
     if form.validate_on_submit():
+
         user = User.authenticate(api_key=form.api_key.data, api_secret=form.api_secret.data,
                                  api_passphrase=form.api_passphrase.data)
 
         if user:
+
             do_login(user)
+
             flash(f"Welcome Back!", "success")
             return redirect(url_for('dashboard', user_id=user.id))
 
@@ -155,26 +202,26 @@ def dashboard(user_id):
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
-    # update the user's accounts in the db
-    update_user_info(user_id)
-
     user = User.query.get_or_404(user_id)
 
-    total_balance = total_balance_usd(user_id)
+    # update the user's accounts in the db with the latest Coinbase Pro data
+    update_user_info(user_id, g.auth)
+
+    total_balance = total_balance_usd(user)
 
     return render_template("users/dashboard.html", user=user, total_balance=total_balance)
 
 
 @app.route('/users/<int:user_id>/rebalance', methods=["GET", "POST"])
 def rebalance(user_id):
-    """View and set allocations for a user's portfolio of currencies."""
+    """Set target allocations for a user's portfolio, then rebalance accordingly."""
 
     if not g.user:
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
     # update the user's accounts in the db
-    update_user_info(user_id)
+    update_user_info(user_id, g.auth)
 
     form = PortfolioForm()
 
@@ -215,11 +262,11 @@ def rebalance(user_id):
         update_target_allocations(user_id, target_portfolio)
 
         # now rebalance portfolio according to those new targets
-        rebalance_portfolio(user_id, auth, 0)
+        rebalance_portfolio(user_id, g.auth, 0)
 
         return redirect(url_for('dashboard', user_id=user_id))
 
-    return render_template('/users/rebalance.html', form=form, assets=assets)
+    return render_template('users/rebalance.html', form=form, assets=assets)
 
 
 @app.route('/users/<int:user_id>/trade', methods=['GET', 'POST'])
@@ -246,7 +293,7 @@ def trade(user_id):
         # be used to buy the "to_currency"
         funds = form.funds.data
 
-        data = place_order(user_id, auth, side, funds, product_id)
+        data = place_order(user_id, g.auth, side, funds, product_id)
 
         if data:
             order_message, order_alert = validate_order(data)
@@ -269,7 +316,7 @@ def deposit(user_id):
     form = DepositForm()
 
     # get payment methods from coinbase and put in db
-    update_payment_methods(user_id, "USD", auth)
+    update_payment_methods(user_id, "USD", g.auth)
 
     # get payment methods from db
     form.payment_method.choices = [(method.id, method.name)
@@ -280,7 +327,7 @@ def deposit(user_id):
         amount = form.amount.data
         currency = "USD"
 
-        res = handle_deposit(user_id, auth, amount,
+        res = handle_deposit(user_id, g.auth, amount,
                              currency, payment_method_id)
         flash("Deposit initiated!", "success")
         return redirect(url_for('deposit', user_id=user_id))
@@ -290,36 +337,21 @@ def deposit(user_id):
 
 ##############################################################################
 # Routes for the front end
-@app.route('/api/users/<int:user_id>/portfolio_pcts', methods=['GET'])
-def get_portfolio_pct_allocations(user_id):
-    pct_allocations = portfolio_pct_allocations(user_id)
+@app.route('/api/users/portfolio_pcts', methods=['GET'])
+def get_portfolio_pct_allocations():
+    pct_allocations = portfolio_pct_allocations(g.user.id)
 
     return jsonify(pct_allocations), 200
 
 
 ##############################################################################
-# Currency pages
-@app.route('/currencies/<string:currency>')
-def currency(currency):
-    """Show curreny info."""
-
-    response = requests.get(f"{API_URL}products/{currency}-btc/ticker")
-    data = response.json()
-
-    convert_to_usd = convert_currency(currency, 'usd', 1)
-    return render_template(f"currencies/currency.html", currency=currency, data=data, usd=convert_to_usd)
-
-
-##############################################################################
 # Homepage, info, and error pages
-
-
 @app.route('/')
 def homepage():
     """Show homepage."""
 
     if g.user:
-        return render_template('dashboard.html', user_id=g.user.id)
+        return render_template('users/dashboard.html', user=g.user)
 
     else:
         return render_template('home-anon.html')

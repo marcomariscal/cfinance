@@ -20,11 +20,13 @@
           </thead>
           <tbody>
             {{ form.hidden_tag() }} {% for asset in form.portfolio if
-            asset.widget.input_type != 'hidden' %} {{asset.hidden_tag()}}
+            asset.widget.input_type != 'hidden' %} {{asset.hidden_tag()}} {% set
+            image = asset.currency.data | lower ~ '.svg' %}
             <tr class="rebalance-table-row" id="{{asset.currency.data}}">
               <td class="align-middle">
                 <img
-                  src="/static/cryptocurrency-icons-master/svg/color/{{asset.currency.data| lower}}.svg"
+                  src="/static/cryptocurrency-icons-master/svg/color/{{image}}"
+                  onerror="this.onerror=null;this.src='/static/cryptocurrency-icons-master/svg/color/generic.svg';"
                   alt="{{asset.currency.data}}"
                   class="currency-icon mr-2"
                 />
