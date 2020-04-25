@@ -9,6 +9,8 @@ import requests
 import base64
 from requests.auth import AuthBase
 from binascii import Error
+from sqlalchemy.ext.hybrid import hybrid_method
+
 
 bcrypt = Bcrypt()
 db = SQLAlchemy()
@@ -48,12 +50,12 @@ class User(db.Model):
         self.api_secret = api_secret
         self.api_passphrase = api_passphrase
 
-        self.auth = self.cb_auth(api_key, api_secret, api_passphrase)
+        self.auth = self.set_auth(api_key, api_secret, api_passphrase)
 
     def __repr__(self):
         return f"<User #{self.id}: {self.api_key}>"
 
-    def cb_auth(self, api_key, api_secret, api_passphrase):
+    def set_auth(self, api_key, api_secret, api_passphrase):
         return CoinbaseExchangeAuth(api_key, api_secret, api_passphrase)
 
     @classmethod

@@ -133,6 +133,7 @@ def signup():
             )
 
             if user:
+
                 db.session.commit()
 
                 do_login(user)
