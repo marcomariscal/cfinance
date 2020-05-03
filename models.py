@@ -9,7 +9,6 @@ import requests
 import base64
 from requests.auth import AuthBase
 from binascii import Error
-from sqlalchemy.ext.hybrid import hybrid_method
 
 
 bcrypt = Bcrypt()
@@ -44,19 +43,17 @@ class User(db.Model):
     current_allocations = db.relationship('CurrentAllocation',
                                           backref='user')
 
+    auth = None
+
     # try to initialize the user with an attribute holding the coinbase pro authentication
     def __init__(self, api_key, api_secret, api_passphrase):
         self.api_key = api_key
         self.api_secret = api_secret
         self.api_passphrase = api_passphrase
-
-        self.auth = self.set_auth(api_key, api_secret, api_passphrase)
+        self.auth = CoinbaseExchangeAuth(api_key, api_secret, api_passphrase)
 
     def __repr__(self):
         return f"<User #{self.id}: {self.api_key}>"
-
-    def set_auth(self, api_key, api_secret, api_passphrase):
-        return CoinbaseExchangeAuth(api_key, api_secret, api_passphrase)
 
     @classmethod
     def signup(cls, api_key, api_secret, api_passphrase):

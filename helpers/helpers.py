@@ -20,7 +20,6 @@ def update_user_accounts(user_id, auth):
     accounts = response.json()
 
     for account in accounts:
-
         id = account["id"]
         currency = account["currency"]
         balance_native = account["balance"]
