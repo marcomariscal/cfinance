@@ -43,17 +43,21 @@ class User(db.Model):
     current_allocations = db.relationship('CurrentAllocation',
                                           backref='user')
 
-    auth = None
+    auth = db.Column(db.PickleType(), nullable=True)
 
     # try to initialize the user with an attribute holding the coinbase pro authentication
     def __init__(self, api_key, api_secret, api_passphrase):
         self.api_key = api_key
         self.api_secret = api_secret
         self.api_passphrase = api_passphrase
-        self.auth = CoinbaseExchangeAuth(api_key, api_secret, api_passphrase)
 
     def __repr__(self):
         return f"<User #{self.id}: {self.api_key}>"
+
+    def set_auth(self, api_key, api_secret, api_passphrase):
+        cb_auth = CoinbaseExchangeAuth(api_key, api_secret, api_passphrase)
+
+        self.auth = cb_auth
 
     @classmethod
     def signup(cls, api_key, api_secret, api_passphrase):

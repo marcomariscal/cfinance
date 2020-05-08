@@ -134,6 +134,9 @@ def signup():
 
             if user:
 
+                user.set_auth(form.api_key.data, form.api_secret.data,
+                              form.api_passphrase.data)
+
                 db.session.commit()
 
                 do_login(user)

@@ -8,10 +8,13 @@ $(function () {
   const $rebalanceSubmit = $("#rebalance-submit");
   const $rebalanceForm = $("#rebalance-form");
 
+  /** dashboard */
   // get pct of portfolio for each currency for pie chart
   async function portfolioAllocationPcts() {
     const { data } = await axios.get(`/api/users/portfolio_pcts`);
-    return data;
+
+    const filteredData = _.pickBy(data, (x) => x !== 0);
+    return filteredData;
   }
 
   // append pie chart to dom
@@ -78,6 +81,8 @@ $(function () {
       options: options,
     });
   })();
+
+  /** rebalance route */
 
   function handlePctInputChange() {
     let portfolioPctSum = 0;
