@@ -43,10 +43,11 @@ def update_user_accounts(user_id, auth):
                               available=available, hold=hold, user_id=user_id)
 
             if g.demo:
-                if currency not in ['GBP', 'BAT', 'LINK']:
+                if currency not in ['BAT', 'LINK', 'EUR', 'GBP']:
                     accounts_to_add.append(account)
             elif not g.demo:
-                accounts_to_add.append(account)
+                if currency not in ['EUR', 'GBP']:
+                    accounts_to_add.append(account)
             else:
                 print('account not recognized')
 
@@ -209,7 +210,8 @@ def get_valid_products_for_orders(accounts):
 
     Returns available base and quote (to and from, respectively) currencies."""
 
-    accounts = [account.currency for account in accounts]
+    accounts = [
+        account.currency for account in accounts if account.balance_usd > 0]
     avail_prods = get_products()
 
     valid_prods = set([
@@ -384,14 +386,13 @@ def find_ticker(curr):
     """Find relevant ticker (used for placing orders) for a currency."""
     products = get_products()
 
-    potential_tickers = [f'{curr}-USD', f'{curr}-USDC', f'{curr}-BTC']
-    # if g.demo:
+    if g.demo:
 
-    #     potential_tickers = [f'{curr}-USD', f'{curr}-USDC', f'{curr}-BTC']
+        potential_tickers = [f'{curr}-USD', f'{curr}-USDC', f'{curr}-BTC']
 
-    # else:
+    if not g.demo:
 
-    # potential_tickers = [f'{curr}-USD']
+        potential_tickers = [f'{curr}-USD']
 
     for ticker in potential_tickers:
         # find the first relevant ticker match within the accessible products
