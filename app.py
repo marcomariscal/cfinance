@@ -11,7 +11,28 @@ from helpers.helpers import *
 
 app = Flask(__name__, instance_path='/instance')
 
-app.config.from_pyfile('instance/config.py')
+# for use in development mode
+# app.config.from_pyfile('instance/config.py')
+
+app.config["SQLALCHEMY_DATABASE_URI"] = 'postgresql:///cfinance'
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = os.environ.get(
+    "SQLALCHEMY_TRACK_MODIFICATIONS", False)
+app.config["SQLALCHEMY_ECHO"] = os.environ.get("SQLALCHEMY_ECHO", False)
+app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY")
+app.config["DEBUG_TB_INTERCEPT_REDIRECTS"] = os.environ.get(
+    "DEBUG_TB_INTERCEPT_REDIRECTS", False)
+
+DEMO_API_KEY = os.environ.get(
+    "DEMO_API_KEY")
+DEMO_SECRET = os.environ.get(
+    "DEMO_SECRET")
+DEMO_PASSPHRASE = os.environ.get("DEMO_PASSPHRASE")
+
+# for us in development mode
+# DEMO_API_KEY = app.config["DEMO_API_KEY"]
+# DEMO_SECRET = app.config["DEMO_SECRET"]
+# DEMO_PASSPHRASE = app.config["DEMO_PASSPHRASE"]
+
 debug = DebugToolbarExtension(app)
 
 connect_db(app)
@@ -20,9 +41,6 @@ db.create_all()
 CB_DEMO_API_URL = "https://api-public.sandbox.pro.coinbase.com/"
 CB_API_URL = "https://api.pro.coinbase.com/"
 
-DEMO_API_KEY = app.config["DEMO_API_KEY"]
-DEMO_SECRET = app.config["DEMO_SECRET"]
-DEMO_PASSPHRASE = app.config["DEMO_PASSPHRASE"]
 
 CURR_USER_KEY = "curr_user"
 DEMO = 'demo'
