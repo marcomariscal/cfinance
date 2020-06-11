@@ -19,15 +19,15 @@ app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = os.environ.get(
     "SQLALCHEMY_TRACK_MODIFICATIONS")
 app.config["SQLALCHEMY_ECHO"] = os.environ.get("SQLALCHEMY_ECHO")
-app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY")
+app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", 'verynice')
 app.config["DEBUG_TB_INTERCEPT_REDIRECTS"] = os.environ.get(
     "DEBUG_TB_INTERCEPT_REDIRECTS")
 
 DEMO_API_KEY = os.environ.get(
-    "DEMO_API_KEY")
+    "DEMO_API_KEY", 'dbe5354088533e5d425613136255a29a')
 DEMO_SECRET = os.environ.get(
-    "DEMO_SECRET")
-DEMO_PASSPHRASE = os.environ.get("DEMO_PASSPHRASE")
+    "DEMO_SECRET", 'y9tLKbTTfxzNirvFTwYqkyFPFGoavuCm6cpsKIKaLAYnjPpf9Rxf7jGrDc7XPcGhAdZ5JkfoJDb+QaVJd+xBig==')
+DEMO_PASSPHRASE = os.environ.get("DEMO_PASSPHRASE", 'pass')
 
 # for us in development mode
 # DEMO_API_KEY = app.config["DEMO_API_KEY"]
