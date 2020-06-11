@@ -14,7 +14,8 @@ app = Flask(__name__, instance_path='/instance')
 # for use in development mode
 # app.config.from_pyfile('instance/config.py')
 
-app.config["SQLALCHEMY_DATABASE_URI"] = 'postgresql:///cfinance'
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
+    "DATABASE_URL", 'postgresql:///cfinance')
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = os.environ.get(
     "SQLALCHEMY_TRACK_MODIFICATIONS", False)
 app.config["SQLALCHEMY_ECHO"] = os.environ.get("SQLALCHEMY_ECHO", False)
