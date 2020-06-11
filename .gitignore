@@ -3,3 +3,4 @@ instance/
 venv/
 .vscode*
 __pycache__
+.idea/
