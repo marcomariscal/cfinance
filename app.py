@@ -17,11 +17,11 @@ app = Flask(__name__, instance_path='/instance')
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
     "DATABASE_URL", 'postgresql:///cfinance')
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = os.environ.get(
-    "SQLALCHEMY_TRACK_MODIFICATIONS", False)
-app.config["SQLALCHEMY_ECHO"] = os.environ.get("SQLALCHEMY_ECHO", False)
+    "SQLALCHEMY_TRACK_MODIFICATIONS")
+app.config["SQLALCHEMY_ECHO"] = os.environ.get("SQLALCHEMY_ECHO")
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY")
 app.config["DEBUG_TB_INTERCEPT_REDIRECTS"] = os.environ.get(
-    "DEBUG_TB_INTERCEPT_REDIRECTS", False)
+    "DEBUG_TB_INTERCEPT_REDIRECTS")
 
 DEMO_API_KEY = os.environ.get(
     "DEMO_API_KEY")
