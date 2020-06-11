@@ -12,7 +12,6 @@ $(function () {
   // get pct of portfolio for each currency for pie chart
   async function portfolioAllocationPcts() {
     const { data } = await axios.get(`/api/users/portfolio_pcts`);
-
     const filteredData = _.pickBy(data, (x) => x !== 0);
     return filteredData;
   }

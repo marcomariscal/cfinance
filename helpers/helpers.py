@@ -1,7 +1,6 @@
 from models import db, Account, PaymentMethod, User, CurrentAllocation, TargetAllocation
 from flask import g
 import requests
-import os
 import simplejson as json
 import pandas as pd
 import numpy as np
@@ -16,8 +15,14 @@ USD_REFERENCE = 'usd'
 
 def update_user_accounts(user_id, auth):
 
+    Account.query.filter_by(
+        user_id=user_id).delete()
+    db.session.commit()
+
     response = requests.get(g.api_url + 'accounts', auth=auth)
     accounts = response.json()
+
+    accounts_to_add = []
 
     for account in accounts:
         id = account["id"]
@@ -26,37 +31,30 @@ def update_user_accounts(user_id, auth):
         available = account["available"]
         hold = account["hold"]
 
-        # don't include LINK becuase you can't transact with it in the sandbox
-        accounts_to_add = []
+        # restricting to certain currencies
+        # not including LINK or BAT becuase you can't transact with it in the sandbox
+        try:
+            balance_usd = convert_currency(
+                currency, balance_native, USD_REFERENCE)
 
-        if currency not in ['LINK', 'EUR', 'GBP']:
-            try:
-                balance_usd = convert_currency(
-                    currency, balance_native, USD_REFERENCE)
+            account = Account(id=id, currency=currency,
+                              balance_native=balance_native,
+                              balance_usd=balance_usd,
+                              available=available, hold=hold, user_id=user_id)
 
-                account_in_db = Account.query.get(id)
-
-                if account_in_db:
-
-                    account_in_db.currency = currency
-                    account_in_db.balance_native = balance_native
-                    account_in_db.balance_usd = balance_usd
-                    account_in_db.available = available
-                    account_in_db.hold = hold
-
-                else:
-
-                    account = Account(id=id, currency=currency,
-                                      balance_native=balance_native,
-                                      balance_usd=balance_usd,
-                                      available=available, hold=hold, user_id=user_id)
-
+            if g.demo:
+                if currency not in ['GBP', 'BAT', 'LINK']:
                     accounts_to_add.append(account)
-            except KeyError:
-                pass
+            elif not g.demo:
+                accounts_to_add.append(account)
+            else:
+                print('account not recognized')
 
-        db.session.add_all(accounts_to_add)
-        db.session.commit()
+        except KeyError:
+            pass
+
+    db.session.add_all(accounts_to_add)
+    db.session.commit()
 
 
 def update_payment_methods(user_id, currency, auth):
@@ -88,13 +86,10 @@ def update_allocations(user_id):
     """Update the user's portfolio of assets in the db with what is in CBP."""
 
     assets = portfolio_pct_allocations(user_id)
-    user = User.query.get_or_404(user_id)
-
-    # delete all rows in model so we can sync the most up to date allocations in CBP
-    db.session.query(CurrentAllocation).delete()
+    CurrentAllocation.query.filter_by(
+        user_id=user_id).delete()
     db.session.commit()
 
-    # create allocations for db if there are no current allocations
     allocations = []
 
     for asset, pct in assets.items():
@@ -109,22 +104,15 @@ def update_allocations(user_id):
 def update_target_allocations(user_id, target_portfolio):
     """Update the user's target allocations in the db."""
 
-    user = User.query.get_or_404(user_id)
-    target_allocations = user.target_allocations
+    TargetAllocation.query.filter_by(user_id=user_id).delete()
+    db.session.commit()
 
-    # delete all rows in model so we can sync the most up to date allocations in CBP
-    if len(target_allocations) > 0:
-
-        db.session.query(TargetAllocation).delete()
-        db.session.commit()
-
-    # create allocations for db if there are no current allocations
     targets = []
 
-    for asset in target_portfolio:
-        allocation = TargetAllocation(
-            currency=asset["currency"], percentage=asset["percentage"], user_id=user_id)
-        targets.append(allocation)
+    for t in target_portfolio:
+        target = TargetAllocation(
+            currency=t["currency"], percentage=t["percentage"], user_id=user_id)
+        targets.append(target)
 
     db.session.add_all(targets)
     db.session.commit()
@@ -164,7 +152,7 @@ def total_balance_usd(user):
 def portfolio_pct_allocations(user_id):
     """Get the percentage of total balance for each asset in the user's accounts."""
 
-    user = User.query.get(user_id)
+    user = User.query.get_or_404(user_id)
     accounts = user.accounts
 
     total = total_balance_usd(user)
@@ -226,12 +214,12 @@ def get_valid_products_for_orders(accounts):
 
     valid_prods = set([
         prod for prod in avail_prods
-        if prod.split('-')[1] in accounts])
+        if prod.split('-')[1] in accounts and prod not in ['LINK-USDC', 'BAT-USDC']])
 
     return valid_prods
 
 
-def rebalance_portfolio(user_id, auth, count):
+def rebalance_portfolio(user_id, auth, max_rebalances):
     """Rebalance a portfolio to the given allocation percentages.
     (i.e.: a portfolio composed of 50% BTC and 50% ETH will be bought according to those percentages, based on how the
     portfolio is currently allocated)
@@ -270,7 +258,7 @@ def rebalance_portfolio(user_id, auth, count):
 
     df["Quote Currency"] = quote_currencies[1]
     df["Quote Currency"] = np.where(
-        df["Ticker"] == 'USD', 'USDC', df["Quote Currency"])
+        df["Ticker"] == 'USD', 'USD', df["Quote Currency"])
     df["Quote Currency"] = np.where(
         df["Ticker"] == 'USDC', 'USD', df["Quote Currency"])
 
@@ -319,9 +307,9 @@ def rebalance_portfolio(user_id, auth, count):
                    'Weight', 'Amount Available to Trade', 'Total Ticker Value', 'Balance Native']]
 
     # keeping updating and transacting as long as the delta between actual and target for any asset value is greater than threshold of 1%
-    # don't make more than 20 iterations of rebalancing
+    # don't make more than 30 iterations of rebalancing
 
-    if (df["% Delta"] >= .01).any() and count <= 30:
+    if (df["% Delta"] >= .01).any() and max_rebalances <= 30:
 
         for index, row in order_df.iterrows():
 
@@ -344,10 +332,6 @@ def rebalance_portfolio(user_id, auth, count):
                 if weight == 'overweight' and currency not in ['USD', 'USDC']:
 
                     order = place_order(user_id, auth, 'sell', delta, ticker)
-
-                    # if 'funds is too large' in order["message"]:
-                    #     order = place_order(
-                    #         user_id, auth, 'sell', delta / 2, ticker)
 
                     print(order)
                     print(
@@ -392,8 +376,8 @@ def rebalance_portfolio(user_id, auth, count):
                     break
 
         # rerun the rebalance
-        count += 1
-        return rebalance_portfolio(user_id, auth, count)
+        max_rebalances += 1
+        return rebalance_portfolio(user_id, auth, max_rebalances)
 
 
 def find_ticker(curr):
@@ -401,6 +385,13 @@ def find_ticker(curr):
     products = get_products()
 
     potential_tickers = [f'{curr}-USD', f'{curr}-USDC', f'{curr}-BTC']
+    # if g.demo:
+
+    #     potential_tickers = [f'{curr}-USD', f'{curr}-USDC', f'{curr}-BTC']
+
+    # else:
+
+    # potential_tickers = [f'{curr}-USD']
 
     for ticker in potential_tickers:
         # find the first relevant ticker match within the accessible products
@@ -424,30 +415,18 @@ def stablecoin_conversion(auth, from_currency, to_currency, amount):
     return data
 
 
-def convert_currency(from_currency, amount, to_currency='usd'):
+def convert_currency(from_currency, amount, to_currency='USD'):
 
-    try:
+    from_curr = from_currency.lower()
+    to_curr = to_currency.lower()
 
-        from_currency = from_currency.lower()
-        to_currency = to_currency.lower()
+    if from_curr == 'usd' and to_curr == 'usd':
+        return amount
 
-        if from_currency == 'usd' and to_currency == 'usd':
-            return amount
+    if to_curr == 'usdc':
+        to_curr = 'usd'
 
-        if from_currency == 'usd':
-            from_curr = 'usd'
-
-        if to_currency == 'usdc':
-            to_curr = 'usdc'
-
-        if to_currency == 'usd':
-            to_curr = 'usd'
-
-        from_curr = get_coingecko_id(from_currency)
-        to_curr = get_coingecko_id(to_currency)
-
-    except (AttributeError, IndexError) as e:
-        print(e)
+    from_curr = get_coingecko_id(from_curr)
 
     params = {
         "ids": from_curr,
@@ -458,8 +437,12 @@ def convert_currency(from_currency, amount, to_currency='usd'):
         'Accepts': 'application/json',
     }
 
-    response = requests.get(
-        COINGECKO_API_URL + 'simple/price', params=params, headers=headers)
+    try:
+        response = requests.get(
+            COINGECKO_API_URL + 'simple/price', params=params, headers=headers)
+
+    except:
+        print(f"could not get price for {from_curr} in {to_curr}.")
 
     json = response.json()
     data = json[from_curr]
@@ -500,8 +483,7 @@ def get_coingecko_id(symbol):
 
         curr_id = [curr["id"] for curr in data if curr["symbol"]
                    == symbol and curr['id'] != 'batcoin'][0]
-
         return curr_id
 
-    except UnboundLocalError as e:
-        print(e)
+    except (IndexError, UnboundLocalError) as e:
+        print(f"could not get coingecko id for {symbol}.", e)

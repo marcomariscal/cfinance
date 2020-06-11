@@ -211,7 +211,10 @@ class TargetAllocation(db.Model):
 
     __tablename__ = "target_allocations"
 
-    currency = db.Column(db.String, primary_key=True,
+    id = db.Column(db.Integer,
+                   primary_key=True)
+
+    currency = db.Column(db.String,
                          nullable=False)
 
     percentage = db.Column(db.Float,
@@ -229,7 +232,10 @@ class CurrentAllocation(db.Model):
 
     __tablename__ = "current_allocations"
 
-    currency = db.Column(db.String, primary_key=True,
+    id = db.Column(db.Integer,
+                   primary_key=True)
+
+    currency = db.Column(db.String,
                          nullable=False)
 
     percentage = db.Column(db.Float,

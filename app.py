@@ -41,9 +41,10 @@ def add_to_g():
 
     if CURR_USER_KEY in session and DEMO not in session:
 
+        g.demo = False
+
         g.user = User.query.get(session[CURR_USER_KEY])
 
-        # trying to use the auth attribute on the user instance, but doesn't work
         g.auth = g.user.auth
 
     else:
@@ -51,6 +52,8 @@ def add_to_g():
         g.user = None
 
     if DEMO in session:
+
+        g.demo = True
 
         g.user = User.query.get(session[CURR_USER_KEY])
 
@@ -174,7 +177,7 @@ def login():
 
             do_login(user)
 
-            flash(f"Welcome Back!", "success")
+            flash("Welcome Back!", "success")
             return redirect(url_for('dashboard', user_id=user.id))
 
         else:
