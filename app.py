@@ -37,7 +37,6 @@ DEMO_PASSPHRASE = os.environ.get("DEMO_PASSPHRASE", 'pass')
 debug = DebugToolbarExtension(app)
 
 connect_db(app)
-db.create_all()
 
 CB_DEMO_API_URL = "https://api-public.sandbox.pro.coinbase.com/"
 CB_API_URL = "https://api.pro.coinbase.com/"
