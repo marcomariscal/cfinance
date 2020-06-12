@@ -29,7 +29,7 @@ DEMO_SECRET = os.environ.get(
     "DEMO_SECRET", 'y9tLKbTTfxzNirvFTwYqkyFPFGoavuCm6cpsKIKaLAYnjPpf9Rxf7jGrDc7XPcGhAdZ5JkfoJDb+QaVJd+xBig==')
 DEMO_PASSPHRASE = os.environ.get("DEMO_PASSPHRASE", 'pass')
 
-# for us in development mode
+# for use in development mode
 # DEMO_API_KEY = app.config["DEMO_API_KEY"]
 # DEMO_SECRET = app.config["DEMO_SECRET"]
 # DEMO_PASSPHRASE = app.config["DEMO_PASSPHRASE"]
