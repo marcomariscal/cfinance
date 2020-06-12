@@ -9,7 +9,7 @@ from forms import UserAddForm, LoginForm, DepositForm, PortfolioForm, OrderForm,
 
 from helpers.helpers import *
 
-app = Flask(__name__, instance_path='/instance')
+app = Flask(__name__)
 
 # for use in development mode
 # app.config.from_pyfile('instance/config.py')
