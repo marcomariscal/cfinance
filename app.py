@@ -73,7 +73,7 @@ def add_to_g():
 
         g.demo = True
 
-        g.user = User.query.get(session[CURR_USER_KEY])
+        g.user = User.query.get_or_404(session[CURR_USER_KEY])
 
         g.auth = CoinbaseExchangeAuth(
             DEMO_API_KEY, DEMO_SECRET, DEMO_PASSPHRASE)
