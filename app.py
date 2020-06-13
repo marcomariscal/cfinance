@@ -34,7 +34,7 @@ DEMO_PASSPHRASE = os.environ.get("DEMO_PASSPHRASE", 'pass')
 # DEMO_SECRET = app.config["DEMO_SECRET"]
 # DEMO_PASSPHRASE = app.config["DEMO_PASSPHRASE"]
 
-debug = DebugToolbarExtension(app)
+# debug = DebugToolbarExtension(app)
 
 connect_db(app)
 
