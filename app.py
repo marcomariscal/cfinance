@@ -362,7 +362,10 @@ def deposit(user_id):
 # Routes for the front end
 @app.route('/api/users/portfolio_pcts', methods=['GET'])
 def get_portfolio_pct_allocations():
-    pct_allocations = portfolio_pct_allocations(g.user.id)
+    try:
+        pct_allocations = portfolio_pct_allocations(g.user.id)
+    except (AttributeError) as e:
+        print("can not get portfolio percentages")
 
     return jsonify(pct_allocations), 200
 
