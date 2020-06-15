@@ -69,7 +69,7 @@ def add_to_g():
 
         g.user = None
 
-    if DEMO in session:
+    if CURR_USER_KEY in session and DEMO in session:
 
         g.demo = True
 
@@ -392,4 +392,3 @@ def page_not_found(e):
     """404 NOT FOUND page."""
 
     return render_template('404.html'), 404
-
