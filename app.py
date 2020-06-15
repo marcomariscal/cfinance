@@ -18,8 +18,7 @@ app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
     "DATABASE_URL", 'postgresql:///cfinance')
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = os.environ.get(
     "SQLALCHEMY_TRACK_MODIFICATIONS", False)
-app.config["SQLALCHEMY_ECHO"] = os.environ.get("SQLALCHEMY_ECHO", False)
-print(type(app.config["SQLALCHEMY_ECHO"]))
+app.config["SQLALCHEMY_ECHO"] = os.environ.get("SQLALCHEMY_ECHO", True)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", 'verynice')
 app.config["DEBUG_TB_INTERCEPT_REDIRECTS"] = os.environ.get(
     "DEBUG_TB_INTERCEPT_REDIRECTS", False)
