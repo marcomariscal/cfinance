@@ -364,10 +364,9 @@ def deposit(user_id):
 def get_portfolio_pct_allocations():
     try:
         pct_allocations = portfolio_pct_allocations(g.user.id)
+        return jsonify(pct_allocations), 200
     except (AttributeError) as e:
         print("can not get portfolio percentages")
-
-    return jsonify(pct_allocations), 200
 
 
 ##############################################################################
